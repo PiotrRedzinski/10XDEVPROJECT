@@ -41,7 +41,6 @@ const userEmail = session?.user?.email;
             </div>
             <div class="hidden md:block">
               <div class="flex items-center space-x-6">
-                <a href="/" class="text-airbnb-hof hover:text-airbnb-rausch px-3 py-2 text-base font-medium rounded-full transition-colors duration-150">Home</a>
                 <a href="/generate" class="text-airbnb-hof hover:text-airbnb-rausch px-3 py-2 text-base font-medium rounded-full transition-colors duration-150">Generate</a>
                 <a href="/flashcards" class="text-airbnb-hof hover:text-airbnb-rausch px-3 py-2 text-base font-medium rounded-full transition-colors duration-150">My Flashcards</a>
                 {userEmail ? (
@@ -61,41 +60,7 @@ const userEmail = session?.user?.email;
       
       <footer class="bg-gray-50 border-t border-gray-200 mt-16">
         <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 class="text-airbnb-hof font-semibold mb-4">About</h3>
-              <ul class="space-y-2">
-                <li><a href="#" class="text-airbnb-foggy hover:text-airbnb-rausch text-sm">How it works</a></li>
-                <li><a href="#" class="text-airbnb-foggy hover:text-airbnb-rausch text-sm">About us</a></li>
-                <li><a href="#" class="text-airbnb-foggy hover:text-airbnb-rausch text-sm">Careers</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 class="text-airbnb-hof font-semibold mb-4">Learning</h3>
-              <ul class="space-y-2">
-                <li><a href="#" class="text-airbnb-foggy hover:text-airbnb-rausch text-sm">Study tips</a></li>
-                <li><a href="#" class="text-airbnb-foggy hover:text-airbnb-rausch text-sm">Resources</a></li>
-                <li><a href="#" class="text-airbnb-foggy hover:text-airbnb-rausch text-sm">Blog</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 class="text-airbnb-hof font-semibold mb-4">Support</h3>
-              <ul class="space-y-2">
-                <li><a href="#" class="text-airbnb-foggy hover:text-airbnb-rausch text-sm">Help Center</a></li>
-                <li><a href="#" class="text-airbnb-foggy hover:text-airbnb-rausch text-sm">Contact us</a></li>
-                <li><a href="#" class="text-airbnb-foggy hover:text-airbnb-rausch text-sm">Trust & Safety</a></li>
-              </ul>
-            </div>
-            <div>
-              <h3 class="text-airbnb-hof font-semibold mb-4">Legal</h3>
-              <ul class="space-y-2">
-                <li><a href="#" class="text-airbnb-foggy hover:text-airbnb-rausch text-sm">Terms of Service</a></li>
-                <li><a href="#" class="text-airbnb-foggy hover:text-airbnb-rausch text-sm">Privacy Policy</a></li>
-                <li><a href="#" class="text-airbnb-foggy hover:text-airbnb-rausch text-sm">Cookie Preferences</a></li>
-              </ul>
-            </div>
-          </div>
-          <div class="border-t border-gray-200 mt-8 pt-8 text-center">
+          <div class="text-center">
             <p class="text-sm text-airbnb-foggy">
               &copy; 2023 Flashcards App. All rights reserved.
             </p>
