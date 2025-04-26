@@ -5,6 +5,7 @@ import * as z from "zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthButton } from "@/components/ui/auth/AuthButton";
+import { useAuth } from "@/components/hooks/useAuth";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -14,7 +15,7 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, isLoading, error } = useAuth();
 
   const {
     register,
@@ -25,10 +26,7 @@ export function LoginForm() {
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    setIsLoading(true);
-    // Backend integration will be implemented later
-    console.log(data);
-    setIsLoading(false);
+    await login(data.email, data.password);
   };
 
   return (
@@ -40,9 +38,10 @@ export function LoginForm() {
           type="email"
           placeholder="you@example.com"
           {...register("email")}
-          className={errors.email ? "border-red-500" : ""}
+          className={errors.email || error?.field === "email" ? "border-red-500" : ""}
         />
         {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
+        {error?.field === "email" && <p className="text-sm text-red-500">{error.message}</p>}
       </div>
 
       <div className="space-y-2">
@@ -51,9 +50,10 @@ export function LoginForm() {
           id="password"
           type="password"
           {...register("password")}
-          className={errors.password ? "border-red-500" : ""}
+          className={errors.password || error?.field === "password" ? "border-red-500" : ""}
         />
         {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
+        {error?.field === "password" && <p className="text-sm text-red-500">{error.message}</p>}
       </div>
 
       <div className="text-sm text-right">

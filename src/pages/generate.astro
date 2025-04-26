@@ -1,6 +1,19 @@
 ---
 import MainLayout from "../layouts/MainLayout.astro";
 import GenerateFlashcardsForm from "../components/GenerateFlashcardsForm";
+import { createSupabaseServer } from "@/lib/supabase.server";
+
+// Disable static generation for this page
+export const prerender = false;
+
+// Get initial session
+const supabase = createSupabaseServer(Astro.cookies);
+const { data: { user } } = await supabase.auth.getUser();
+
+// This should never happen due to middleware, but just in case
+if (!user) {
+  return Astro.redirect('/login');
+}
 ---
 
 <MainLayout title="Generate Flashcards">

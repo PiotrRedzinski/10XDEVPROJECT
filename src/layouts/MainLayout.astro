@@ -1,11 +1,18 @@
 ---
 import "../styles/global.css";
+import { UserMenu } from "@/components/auth/UserMenu";
+import { createSupabaseServer } from "@/lib/supabase.server";
 
 interface Props {
   title?: string;
 }
 
 const { title = "Flashcards Generator" } = Astro.props;
+
+// Get user session
+const supabase = createSupabaseServer(Astro.cookies);
+const { data: { session } } = await supabase.auth.getSession();
+const userEmail = session?.user?.email;
 ---
 
 <!DOCTYPE html>
@@ -37,7 +44,11 @@ const { title = "Flashcards Generator" } = Astro.props;
                 <a href="/" class="text-airbnb-hof hover:text-airbnb-rausch px-3 py-2 text-base font-medium rounded-full transition-colors duration-150">Home</a>
                 <a href="/generate" class="text-airbnb-hof hover:text-airbnb-rausch px-3 py-2 text-base font-medium rounded-full transition-colors duration-150">Generate</a>
                 <a href="/flashcards" class="text-airbnb-hof hover:text-airbnb-rausch px-3 py-2 text-base font-medium rounded-full transition-colors duration-150">My Flashcards</a>
-                <button class="bg-airbnb-rausch text-white px-4 py-2 rounded-full font-medium shadow-sm hover:bg-[#FF385C] transition-colors duration-150">Get Started</button>
+                {userEmail ? (
+                  <UserMenu client:load userEmail={userEmail} />
+                ) : (
+                  <a href="/login" class="bg-airbnb-rausch text-white px-4 py-2 rounded-full font-medium shadow-sm hover:bg-[#FF385C] transition-colors duration-150">Get Started</a>
+                )}
               </div>
             </div>
           </div>
