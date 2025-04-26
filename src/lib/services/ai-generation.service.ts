@@ -94,6 +94,7 @@ export class AIGenerationService {
           generation_id: session.id,
           user_id: userId,
           status: "pending",
+          source: "ai",
         }))
       );
 
@@ -103,7 +104,7 @@ export class AIGenerationService {
       }
 
       // Calculate metrics
-      const generationDuration = (Date.now() - startTime) / 1000;
+      const generationDuration = Math.round(Date.now() - startTime); // Duration in milliseconds
       const metrics: AIGenerationSessionMetricsDTO = {
         generation_duration: generationDuration,
         generated: generatedFlashcards.length,
@@ -211,11 +212,53 @@ export class AIGenerationService {
     }
 
     try {
-      const flashcards: FlashcardDTO[] = JSON.parse(content);
+      // Log the raw response for debugging
+      await this.logger.info("Raw AI response", { content });
+
+      // Try to parse the response as JSON
+      let flashcards: FlashcardDTO[];
+      try {
+        flashcards = JSON.parse(content);
+      } catch (parseError) {
+        await this.logger.error("JSON parse error", {
+          error: parseError instanceof Error ? parseError.message : "Unknown error",
+          content,
+        });
+        throw new Error("Failed to parse AI response as JSON. The response must be a valid JSON array.");
+      }
+
+      // Validate the parsed response
+      if (!Array.isArray(flashcards)) {
+        await this.logger.error("Invalid response format", {
+          error: "Response is not an array",
+          content,
+        });
+        throw new Error("AI response is not an array of flashcards");
+      }
+
+      // Validate each flashcard
+      const invalidCards = flashcards.filter(
+        (card) => !card.front || !card.back || typeof card.front !== "string" || typeof card.back !== "string"
+      );
+
+      if (invalidCards.length > 0) {
+        await this.logger.error("Invalid flashcard format", {
+          error: "Some flashcards are missing front/back or have invalid types",
+          invalidCards,
+        });
+        throw new Error("Some flashcards have invalid format. Each flashcard must have 'front' and 'back' strings.");
+      }
+
       return flashcards.slice(0, AI_CONFIG.GENERATION.MAX_FLASHCARDS);
-    } catch (parseError) {
-      console.error("Failed to parse OpenAI response:", parseError);
-      throw new Error("Failed to parse AI response as flashcards");
+    } catch (error) {
+      // Log the error with context
+      await this.logger.error("Flashcard generation error", {
+        error: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+        rawResponse: content,
+      });
+
+      throw error;
     }
   }
 }

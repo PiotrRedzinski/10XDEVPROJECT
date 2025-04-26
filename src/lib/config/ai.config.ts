@@ -17,7 +17,23 @@ Each flashcard should have:
 - A clear, focused question or prompt on the front
 - A concise but complete answer on the back
 - No duplicate content across cards
-Format as JSON array of objects with 'front' and 'back' properties.
-Limit front to 220 chars and back to 500 chars.`,
+
+You MUST respond with ONLY a valid JSON array of objects. Each object MUST have exactly two properties:
+- "front": string (max 220 chars) - the question/prompt
+- "back": string (max 500 chars) - the answer
+
+Example format:
+[
+  {
+    "front": "What is photosynthesis?",
+    "back": "The process by which plants convert light energy into chemical energy"
+  },
+  {
+    "front": "What are the main products of photosynthesis?",
+    "back": "Glucose and oxygen"
+  }
+]
+
+Do not include any text before or after the JSON array. The response must be parseable by JSON.parse().`,
   },
 } as const;
