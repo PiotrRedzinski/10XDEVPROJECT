@@ -2,17 +2,17 @@
 
 ## 1. Resources
 
-- **Users**: Corresponds to the `users` table. Contains user credentials and profile information.
-- **Flashcards**: Corresponds to the `flashcards` table. Stores flashcards created manually or generated via AI, with fields for front text (max 220 chars) and back text (max 500 chars), status, and source.
-- **AI Generation Sessions**: Corresponds to the `ai_generation_sessions` table. Logs AI flashcard generation metadata (duration, count of generated flashcards, accepted and rejected counts).
-- **Generation Error Logs**: Corresponds to the `generation_error_log` table. Logs errors related to AI flashcard generation. (This resource is mainly for internal debugging and analytics.)
+- **Users**: Represents user accounts using data from the `users` table.
+- **Flashcards**: Represents both manually created and AI-generated flashcards, based on the `flashcards` table. Each flashcard record now includes a `generation_id` field that references the `id` of an AI Generation Session (if applicable).
+- **AI Generation Sessions**: Represents sessions of AI flashcard generation including metrics (duration, count of flashcards generated, accepted, rejected) from the `ai_generation_sessions` table.
+- **Generation Error Logs**: Represents logs of errors encountered during AI generation from the `generation_error_log` table.
 
 ## 2. Endpoints
 
 ### 2.1 Authentication
 
 - **POST /api/auth/register**
-  - **Description**: Registers a new user account.
+  - **Description**: Register a new user.
   - **Request Body (JSON)**:
     ```json
     {
@@ -21,12 +21,12 @@
       "password": "string"
     }
     ```
-  - **Response (JSON)**: Newly created user object with id, username, and other profile details.
+  - **Response (JSON)**: Returns the created user's details (e.g., id, username, email).
   - **Success Codes**: 201 Created
-  - **Error Codes**: 400 (validation errors), 409 (username/email conflict)
+  - **Error Codes**: 400 (validation errors), 409 (duplicate username/email)
 
 - **POST /api/auth/login**
-  - **Description**: Authenticates a user and returns a JWT token.
+  - **Description**: Authenticate a user and issue a JWT token.
   - **Request Body (JSON)**:
     ```json
     {
@@ -38,28 +38,33 @@
     ```json
     {
       "token": "JWT token string",
-      "user": { "id": "uuid", "username": "string", "email": "string" }
+      "user": {
+        "id": "uuid",
+        "username": "string",
+        "email": "string"
+      }
     }
     ```
   - **Success Codes**: 200 OK
-  - **Error Codes**: 400 (invalid data), 401 (authentication failed)
+  - **Error Codes**: 400 (invalid input), 401 (authentication failed)
 
 ### 2.2 Flashcards
 
 - **GET /api/flashcards**
-  - **Description**: Retrieves a paginated list of flashcards associated with the authenticated user. Supports filtering by status and sorting.
+  - **Description**: Retrieve a paginated list of flashcards for the authenticated user. Supports filtering by status and sorting.
   - **Query Parameters** (optional):
-    - `page` (number)
-    - `limit` (number)
-    - `status` (string; e.g., pending, accepted-original, accepted-edited, rejected)
-    - `sortBy` (field name)
-    - `order` (asc/desc)
+    - `page`: number (default 1)
+    - `limit`: number (default 10)
+    - `status`: string (e.g., pending, accepted-original, accepted-edited, rejected)
+    - `sortBy`: field name (e.g., created_at)
+    - `order`: asc or desc
   - **Response (JSON)**:
     ```json
     {
       "flashcards": [
         {
           "id": "uuid",
+          "generation_id": "uuid",  // References the associated AI generation session, if any
           "front": "string",
           "back": "string",
           "status": "string",
@@ -68,37 +73,34 @@
           "updated_at": "timestamp"
         }
       ],
-      "pagination": {
-        "page": 1,
-        "limit": 10,
-        "total": 100
-      }
+      "pagination": { "page": 1, "limit": 10, "total": 100 }
     }
     ```
   - **Success Codes**: 200 OK
   - **Error Codes**: 401 (unauthorized), 500 (server error)
 
 - **GET /api/flashcards/:id**
-  - **Description**: Retrieves the details of a single flashcard.
-  - **Response (JSON)**: Flashcard object as shown above.
+  - **Description**: Retrieve details of a single flashcard.
+  - **Response (JSON)**: Returns the flashcard object including the `generation_id` field.
   - **Success Codes**: 200 OK
   - **Error Codes**: 401, 404 (not found)
 
 - **POST /api/flashcards**
-  - **Description**: Manually creates a new flashcard.
+  - **Description**: Create a new flashcard manually.
   - **Request Body (JSON)**:
     ```json
     {
       "front": "string (max 220 characters)",
-      "back": "string (max 500 characters)"
+      "back": "string (max 500 characters)",
+      "generation_id": "uuid or null"  // Optional: set if the flashcard is linked to an AI generation session; otherwise, null for manual creation.
     }
     ```
-  - **Response (JSON)**: Created flashcard object.
+  - **Response (JSON)**: Returns the created flashcard object including its `generation_id`.
   - **Success Codes**: 201 Created
-  - **Error Codes**: 400 (validation error), 401
+  - **Error Codes**: 400 (validation error), 401 (unauthorized)
 
 - **PUT /api/flashcards/:id**
-  - **Description**: Updates an existing flashcard (manual edit). Only the `front` and `back` fields are allowed.
+  - **Description**: Update an existing flashcard (manual edit). Only the `front` and `back` fields are allowed, while the `generation_id` remains unchanged.
   - **Request Body (JSON)**:
     ```json
     {
@@ -106,12 +108,12 @@
       "back": "string (max 500 characters)"
     }
     ```
-  - **Response (JSON)**: Updated flashcard object.
+  - **Response (JSON)**: Returns the updated flashcard object including the existing `generation_id`.
   - **Success Codes**: 200 OK
-  - **Error Codes**: 400, 401, 404
+  - **Error Codes**: 400 (validation error), 401, 404 (not found)
 
 - **DELETE /api/flashcards/:id**
-  - **Description**: Deletes a flashcard.
+  - **Description**: Delete a flashcard.
   - **Response (JSON)**:
     ```json
     { "message": "Flashcard deleted successfully." }
@@ -120,21 +122,21 @@
   - **Error Codes**: 401, 404
 
 - **PATCH /api/flashcards/:id/status**
-  - **Description**: Updates the status of a flashcard for business actions such as accept or reject.
+  - **Description**: Update the status of a flashcard (e.g., to accept or reject an AI-generated flashcard).
   - **Request Body (JSON)**:
     ```json
     {
       "action": "accept" | "reject"
     }
     ```
-  - **Response (JSON)**: Updated flashcard object reflecting the new status (e.g., accepted-original / accepted-edited for accept, rejected for reject).
+  - **Response (JSON)**: Returns the flashcard object with its updated status while preserving the `generation_id`.
   - **Success Codes**: 200 OK
   - **Error Codes**: 400 (invalid action), 401, 404
 
 ### 2.3 AI Generation
 
 - **POST /api/ai/generate**
-  - **Description**: Generates flashcards using AI from the provided text input. The text must be between 1000 and 10000 characters and will be segmented into thematically consistent portions.
+  - **Description**: Generate flashcards using AI from submitted text. The input text must be between 1000 and 10000 characters and will be segmented into thematically consistent portions. All generated flashcards will include the `generation_id` linking them to the current AI generation session.
   - **Request Body (JSON)**:
     ```json
     {
@@ -145,7 +147,16 @@
     ```json
     {
       "flashcards": [
-        { "front": "string", "back": "string", "status": "pending", ... }
+        {
+          "id": "uuid",
+          "generation_id": "uuid",  // References the AI generation session
+          "front": "string",
+          "back": "string",
+          "status": "pending",
+          "source": "ai",
+          "created_at": "timestamp",
+          "updated_at": "timestamp"
+        }
       ],
       "sessionMetrics": {
         "generation_duration": "integer",
@@ -162,40 +173,61 @@
 ### 2.4 AI Generation Sessions (Optional / Admin)
 
 - **GET /api/ai/sessions**
-  - **Description**: Retrieves a list of AI generation sessions for the authenticated user or for administrative purposes.
-  - **Query Parameters**: Pagination options (page, limit).
-  - **Response (JSON)**: A list of session objects with metrics and creation timestamps.
+  - **Description**: Retrieve a paginated list of AI generation sessions for the authenticated user (or for administrative use).
+  - **Query Parameters**:
+    - `page`: number
+    - `limit`: number
+  - **Response (JSON)**:
+    ```json
+    {
+      "sessions": [
+        {
+          "id": "uuid",
+          "generation_duration": "integer",
+          "generated": "integer",
+          "accepted_original": "integer",
+          "accepted_edited": "integer",
+          "rejected": "integer",
+          "created_at": "timestamp"
+        }
+      ],
+      "pagination": { "page": 1, "limit": 10, "total": 50 }
+    }
+    ```
   - **Success Codes**: 200 OK
   - **Error Codes**: 401, 500
 
 ### 2.5 Generation Error Logs (Internal)
 
 - (Optional) **GET /api/ai/errors**
-  - **Description**: Retrieves error logs related to AI generation. Intended for internal or admin use only.
-  - **Response (JSON)**: A list of error log entries.
-  - **Access**: Restricted, not exposed publicly.
+  - **Description**: Retrieve AI generation error logs for internal or administrative purposes.
+  - **Response (JSON)**: Returns a list of error log entries.
+  - **Access**: Restricted
+  - **Success Codes**: 200 OK
+  - **Error Codes**: 401, 500
 
 ## 3. Authentication and Authorization
 
-- **Mechanism**: JWT-based authentication.
+- **Mechanism**: JSON Web Token (JWT) based authentication.
 - **Public Endpoints**: `/api/auth/register` and `/api/auth/login` do not require a token.
-- **Protected Endpoints**: All other endpoints require a valid JWT token included in the header as follows:
+- **Protected Endpoints**: All other endpoints require a valid JWT provided in the request header:
   ```
   Authorization: Bearer <JWT token>
   ```
-- **Database Security**: Row-level security (RLS) is enforced on all tables to ensure that users can only access and modify their own data.
+- **Database Security**: Row Level Security (RLS) is enforced at the database level, ensuring that users can access only their own records.
 
 ## 4. Validation and Business Logic
 
 ### 4.1 Validation
 
 - **Flashcards**:
-  - `front` field: Maximum 220 characters.
-  - `back` field: Maximum 500 characters.
-  - If these limits are exceeded, the API returns a 400 error with a message specifying the allowed number of characters.
+  - `front`: Maximum 220 characters.
+  - `back`: Maximum 500 characters.
+  - The `generation_id` field must either be a valid UUID referencing an existing AI generation session or null.
+  - Exceeding the text limits results in a 400 error with a message indicating the allowed character count.
 
 - **AI Generation Input**:
-  - The provided text must be between 1000 and 10000 characters. Otherwise, a 400 error is returned.
+  - The input text must be between 1000 and 10000 characters; otherwise, a 400 error is returned.
 
 ### 4.2 Business Logic
 

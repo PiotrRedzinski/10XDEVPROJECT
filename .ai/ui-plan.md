@@ -2,93 +2,66 @@
 
 ## 1. Przegląd struktury UI
 
-W architekturze UI produktu "Fiszki Edukacyjne" integrujemy widok logowania w głównej strukturze interfejsu oraz zapewniamy zestaw kluczowych widoków do zarządzania fiszkami. Aplikacja bazuje na stałym menu nawigacyjnym (Navigation Menu) z komponentów Shadcn/ui, co umożliwia łatwą nawigację między dashboardem, widokami szczegółowymi, edycji, generacji AI oraz  zatwierdzania/odrzucania fiszek. Zarządzanie stanem odbywa się przy użyciu React, a autoryzacja oparta jest na JWT dla zapewnienia bezpieczeństwa komunikacji z API. Responsywność jest zapewniona przez bilbiotekę Tailwind CSS.
+Interfejs użytkownika jest oparty na wspólnym, spójnym układzie, który wykorzystuje komponenty z shadcn/ui oraz Tailwind CSS. Głównym elementem nawigacyjnym jest dynamiczny top-bar, który w zależności od stanu sesji (zalogowany/niezalogowany) wyświetla odpowiednie opcje. UI składa się z widoków logowania/rejestracji, generowania fiszek, listy fiszek oraz (opcjonalnie) edycji fiszki – wszystko zaprojektowane z myślą o prostocie, dostępności i natychmiastowym feedbacku dla użytkownika.
 
 ## 2. Lista widoków
 
-### Widok Główny / Logowanie (wbudowane)
-- Nazwa widoku: Logowanie (wbudowane)
-- Ścieżka widoku: `/` (strona główna)
-- Główny cel: Umożliwić użytkownikowi zalogowanie się oraz prezentację formularza logowania dla niezautoryzowanych użytkowników.
-- Kluczowe informacje do wyświetlenia: Formularz logowania (pola: username, password), komunikaty walidacyjne oraz ewentualne błędy uwierzytelniania.
-- Kluczowe komponenty widoku: Formularz logowania, komunikaty o błędach inline, Navigation Menu, przejście do Rejestracja
-- UX, dostępność i względy bezpieczeństwa: Intuicyjny układ formularza, etykiety ARIA, wysoki kontrast oraz ochrona danych logowania poprzez JWT.
+### 2.1. Widok Logowania/Rejestracji
+- **Ścieżka widoku:** /login
+- **Główny cel:** Umożliwienie użytkownikowi zalogowania się lub rejestracji w systemie przy użyciu jednego wspólnego formularza.
+- **Kluczowe informacje do wyświetlenia:** Pole e-mail (pełniące rolę nazwy użytkownika) oraz pole hasła.
+- **Kluczowe komponenty widoku:** Formularz logowania (pola e-mail i hasło), przyciski "Zaloguj" i "Zarejestruj", inline komunikaty o błędach.
+- **UX, dostępność i względy bezpieczeństwa:** Prosty, minimalistyczny interfejs z natychmiastowym feedbackiem błędów i zabezpieczeniem danych (późniejsza integracja JWT).
 
+### 2.2. Ekran Generowania Fiszek
+- **Ścieżka widoku:** /generate
+- **Główny cel:** Umożliwienie użytkownikowi generowania fiszek za pomocą AI przez wprowadzenie tekstu spełniającego wymagania długości (1000-10000 znaków).
+- **Kluczowe informacje do wyświetlenia:** Pole tekstowe z placeholderem "Wprowadź tekst od długości od 1000 do 10000 znaków" oraz przycisk "Generuj Fiszki".
+- **Kluczowe komponenty widoku:** Formularz do wprowadzania tekstu, przycisk uruchamiający proces generacji, inline komunikaty o błędach walidacji.
+- **UX, dostępność i względy bezpieczeństwa:** Intuicyjny formularz z wyraźnymi komunikatami i walidacją na poziomie klienta.
 
-### Widok Główny / Rejestracja 
-- Nazwa widoku: Rejestracja 
-- Ścieżka widoku: `/register`
-- Główny cel: Umożliwić użytkownikowi zerejestrowanie nowego użytkownika.
-- Kluczowe informacje do wyświetlenia: Formularz rejestracji (pola: username, password, email), komunikaty walidacyjne oraz ewentualne błędy rejestracji.
-- Kluczowe komponenty widoku: Formularz rejestracji, komunikaty o błędach inline, Navigation Menu.
-- UX, dostępność i względy bezpieczeństwa: Intuicyjny układ formularza, etykiety ARIA, wysoki kontrast.
+### 2.3. Widok Listy Fiszek
+- **Ścieżka widoku:** /flashcards
+- **Główny cel:** Prezentacja wygenerowanych (oraz manualnie utworzonych) fiszek w formie siatki umożliwiającej natychmiastową interakcję.
+- **Kluczowe informacje do wyświetlenia:** Fiszki rozmieszczone w siatce, gdzie każdy wiersz zawiera dokładnie trzy fiszki.
+- **Kluczowe komponenty widoku:** Komponent karty fiszki z przyciskami "Zatwierdź", "Edytuj" i "Odrzuć"; opcje operacji grupowych (przyciski "Zatwierdź wszystkie" i "Odrzuć wszystkie").
+- **UX, dostępność i względy bezpieczeństwa:** Spójny układ siatki, natychmiastowy feedback przy akcji, dostępność dla użytkowników desktopowych oraz mechanizmy inline wyświetlania błędów.
 
-### Dashboard
-- Nazwa widoku: Dashboard
-- Ścieżka widoku: `/dashboard`
-- Główny cel: Prezentacja listy fiszek użytkownika wraz z możliwością filtrowania, sortowania i paginacji.
-- Kluczowe informacje do wyświetlenia: Lista fiszek z podziałem na statusy (pending, accepted, rejected).
-- Kluczowe komponenty widoku: Tabela lub lista fiszek, filtry, paginacja, komponenty statusowe oraz Navigation Menu.
-- UX, dostępność i względy bezpieczeństwa: Czytelny i responsywny interfejs, przejrzyste komunikaty błędów (inline) oraz zabezpieczenia oparte na JWT.
-
-### Widok Szczegółowy Fiszki
-- Nazwa widoku: Szczegóły Fiszki
-- Ścieżka widoku: `/flashcards/:id`
-- Główny cel: Prezentacja pełnych informacji wybranej fiszki.
-- Kluczowe informacje do wyświetlenia: Treść "przód" i "tył", status, data utworzenia/aktualizacji, źródło oraz ewentualne notatki.
-- Kluczowe komponenty widoku: Sekcja z danymi fiszki, przyciski akcji (edytuj, zatwierdź/odrzuć, usuń), Navigation Menu.
-- UX, dostępność i względy bezpieczeństwa: Przejrzysty układ, dostępne etykiety ARIA, intuicyjne przyciski oraz ochrona danych poprzez JWT.
-
-### Widok Edycji Fiszki
-- Nazwa widoku: Edycja Fiszki
-- Ścieżka widoku: `/flashcards/:id/edit`
-- Główny cel: Umożliwić użytkownikowi edycję pól "przód" i "tył" fiszki z uwzględnieniem walidacji długości (max 220 i 500 znaków).
-- Kluczowe informacje do wyświetlenia: Formularz edycji z polami tekstowymi, komunikaty walidacyjne oraz przycisk zapisu.
-- Kluczowe komponenty widoku: Formularz edycji, przycisk zapisu, komunikaty błędów inline.
-- UX, dostępność i względy bezpieczeństwa: Intuicyjny formularz z natychmiastową walidacją, etykiety ARIA oraz zabezpieczenia JWT przed nieautoryzowanym dostępem.
-
-### Widok Generacji, Zawtierdzania i Odrzucania Fiszek AI
-- Nazwa widoku: Generacja Fiszek AI
-- Ścieżka widoku: `/ai/generation`
-- Główny cel: Umożliwić generowanie i zatwierdzanie/odrzucanie fiszek przy użyciu AI na podstawie wprowadzonego tekstu (1000-10000 znaków).
-- Kluczowe informacje do wyświetlenia: Formularz wprowadzania tekstu, wyniki generacji, komunikaty walidacyjne (np. długość tekstu) oraz status procesu generacji.
-- Kluczowe komponenty widoku: Pole tekstowe, przycisk generacji, lista wyników generacji z opcjami akceptuj/edytuj/odrzuć dla każdej wygenerowanej fiszki, komunikaty o błędach inline.
-- UX, dostępność i względy bezpieczeństwa: Przejrzysty interfejs, wyraźne komunikaty walidacyjne, dostępność ARIA oraz autoryzacja przez JWT.
-
-### Widok Masowego Zatwierdzania/Odrzucania Fiszek
-- Nazwa widoku: Masowe Zarządzanie Fiszkami AI
-- Ścieżka widoku: `/flashcards/mass-approval`
-- Główny cel: Umożliwić użytkownikowi masowe zatwierdzenie lub odrzucenie fiszek wygenerowanych przez AI.
-- Kluczowe informacje do wyświetlenia: Lista fiszek w trybie wyboru (checkboxy) z możliwością selekcji oraz przyciski do masowych akcji (zatwierdź, odrzuć).
-- Kluczowe komponenty widoku: Tabela lub lista z opcjami wyboru, checkboxy, przyciski akcji, Navigation Menu.
-- UX, dostępność i względy bezpieczeństwa: Intuicyjna selekcja wielu elementów, potwierdzenia akcji, komunikaty inline o błędach oraz zabezpieczenia JWT.
+### 2.4. Widok Edycji Fiszki (Opcjonalny)
+- **Ścieżka widoku:** /flashcards/:id/edit (lub edycja inline/modal w widoku listy fiszek)
+- **Główny cel:** Umożliwienie użytkownikowi modyfikacji pól "przód" i "tył" fiszki.
+- **Kluczowe informacje do wyświetlenia:** Aktualna treść fiszki, pola edycyjne dla "przodu" i "tyłu".
+- **Kluczowe komponenty widoku:** Formularz edycji, przycisk zapisu zmian, mechanizm odświeżania danych z bazy, inline komunikaty o błędach.
+- **UX, dostępność i względy bezpieczeństwa:** Minimalistyczny interfejs skupiony wyłącznie na edycji, zapewniający szybkie, jednozadaniowe operacje z widocznym feedbackiem.
 
 ## 3. Mapa podróży użytkownika
 
-1. Użytkownik odwiedza stronę główną (`/`) i widzi zintegrowany formularz logowania.
-2. Użytkownik nie posiadający konta przechodzi do formularza rejestracji, po rejestracji wraca do strony logowania
-3. Po pomyślnym logowaniu (poprzez JWT) użytkownik zostaje przekierowany do Dashboardu (`/dashboard`).
-4. Na Dashboardzie użytkownik przegląda listę fiszek, korzysta z filtrów i paginacji, aby znaleźć interesujące go fiszki.
-5. Klikając na konkretną fizzkę, użytkownik przechodzi do widoku Szczegółowy Fiszki (`/flashcards/:id`), gdzie przegląda pełne informacje fiszki.
-6. W razie potrzeby użytkownik może wybrać opcję edycji, która przenosi go do Widoku Edycji Fiszki (`/flashcards/:id/edit`).
-7. Aby wygenerować nowe fiszki, użytkownik przechodzi do Widoku Generacji Fiszek AI (`/ai/generation`), wprowadza tekst i inicjuje proces generacji. Użytkownik może akepctować/edytować lub odrzuać pojedyncze wygenerowane prze AI fiszki.
-8. Po wygenerowaniu fiszek użytkownik opcjonalnie przechodzi do Widoku Masowego Zarządzania Fiszkami AI (`/flashcards/mass-approval`), gdzie dokonuje masowego zatwierdzania lub odrzucenia fiszek.
-9. Nawigacja między widokami odbywa się za pomocą stałego Navigation Menu dostępnego na każdej stronie.
-10. w każdym momencie użytkownik ma możliwość wylogowania za pomocą stałego przycisku w Navigation Menu
+1. Użytkownik wchodzi na stronę główną, gdzie widzi top-bar z opcją "Zaloguj" (dla niezalogowanych).
+2. Po kliknięciu "Zaloguj", użytkownik przechodzi do widoku logowania/rejestracji, gdzie wprowadza e-mail oraz hasło.
+3. Po pomyślnym logowaniu, top-bar dynamicznie zmienia się, wyświetlając dodatkowe opcje: moduł generowania fiszek, lista fiszek, nazwa użytkownika oraz opcję wyloguj.
+4. Użytkownik klika opcję "Generuj Fiszki" w top-bar i przechodzi do ekranu generowania fiszek.
+5. W ekranie generowania fiszek, użytkownik wkleja tekst spełniający wymagania długości i uruchamia proces generacji poprzez przycisk "Generuj Fiszki".
+6. Po zakończeniu procesu generacji, użytkownik jest natychmiast przekierowywany do widoku listy fiszek, gdzie fiszki są wyświetlane w stałej, trójkolumnowej siatce.
+7. Użytkownik może przeglądać fiszki, indywidualnie je zatwierdzać, edytować lub odrzucać, a także korzystać z operacji grupowych (zatwierdź/odrzuć wszystkie).
+8. W przypadku wystąpienia błędów lub walidacji, użytkownik otrzymuje inline komunikaty przy odpowiednich komponentach.
 
 ## 4. Układ i struktura nawigacji
 
-- Główna nawigacja oparta jest na stałym pasku (Navigation Menu) umieszczonym na górze strony, który jest widoczny na wszystkich widokach.
-- Menu zawiera linki do głównych widoków: Dashboard, Generacja Fiszek AI, Masowe Zarządzanie Fiszkami.
-- Widok logowania jest zintegrowany w głównej stronie, a po zalogowaniu menu wyświetla dodatkowe opcje, takie jak profil użytkownika i wylogowanie.
-- Nawigacja jest responsywna, z optymalizacją dla środowiska desktop oraz podstawowymi rozwiązaniami dla mniejszych ekranów.
-- Dostępność zapewniona jest poprzez użycie etykiet ARIA, czytelnych kontrastów i intuicyjnych elementów nawigacyjnych.
+- **Top-Bar:** Główny element nawigacyjny widoczny na wszystkich widokach.
+  - Dla niezalogowanych: Wyświetla nazwę aplikacji oraz opcję "Zaloguj".
+  - Dla zalogowanych: Wyświetla nazwę aplikacji, linki do modułów (Generowanie fiszek, Lista fiszek), nazwę użytkownika oraz opcję "Wyloguj".
+- **Nawigacja:** Użytkownik przechodzi między widokami poprzez kliknięcie odpowiednich linków w top-bar. Przykładowo:
+  - Kliknięcie "Generuj Fiszki" przekierowuje bezpośrednio do ekranu generowania fiszek.
+  - Kliknięcie "Lista fiszek" przenosi użytkownika do widoku siatki fiszek.
+- **Przepływy akcji:** Operacje takie jak logowanie, generowanie fiszek czy edycja są zaprojektowane tak, aby zapewnić natychmiastowy feedback i minimalną liczbę kroków, redukując punkty tarcia użytkownika.
 
 ## 5. Kluczowe komponenty
 
-- Navigation Menu: Stały komponent zapewniający łatwą nawigację między widokami.
-- Formularze: Uniwersalne formularze dla logowania, generacji fiszek, edycji oraz masowych akcji z walidacją inline.
-- Lista/Tabela: Komponent do wyświetlania fiszek z opcjami filtrowania, sortowania i paginacji.
-- Komunikaty o błędach: Elementy inline do wyświetlania komunikatów o błędach (np. statusy 400, 401, 500) w przystępny sposób.
-- Modal/Dialogue: Okna dialogowe do potwierdzenia krytycznych akcji (np. usunięcia fiszki, zatwierdzenia masowych operacji).
-- Context Provider: Globalny provider zarządzania stanem (React Context) odpowiedzialny za synchronizację danych z API i obsługę JWT. 
+- **TopBar:** Wspólny, dynamiczny element nawigacyjny odpowiedzialny za wyświetlanie opcji zgodnie z stanem sesji.
+- **Formularz logowania/rejestracji:** Minimalistyczny układ z polami na e-mail i hasło, wraz z inline komunikatami o błędach.
+- **Formularz generowania fiszek:** Pole tekstowe z wyraźnym placeholderem oraz przycisk do uruchomienia generacji. Walidacja wbudowana w formularz zapewnia zgodność z wymogami długości tekstu.
+- **Fiszka Card:** Komponent prezentujący pojedynczą fiszkę, zawierający przyciski akcji (Zatwierdź, Edytuj, Odrzuć) dla indywidualnych operacji.
+- **Grid Layout:** Stały układ siatki prezentujący fiszki w trzech kolumnach, niezależnie od zmiany rozmiaru okna, dostosowany do MVP na interfejs desktop.
+- **Modal/Widok edycji:** Mechanizm umożliwiający edycję fiszki (pole przód i tyl), z mechanizmem odświeżania danych i inline komunikatami o błędach.
+- **Komponenty komunikatów:** Elementy służące do wyświetlania inline błędów walidacji i innych komunikatów systemowych.
+- **React Context oraz Hooki:** Mechanizm zarządzania stanem aplikacji, oddzielający stan sesji użytkownika od danych fiszek, zapewniający spójność i efektywność interakcji. 

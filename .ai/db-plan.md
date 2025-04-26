@@ -6,6 +6,7 @@ Database Schema Plan
 --------
 
 ### users
+- table is managed by supabase auth
 - id: UUID PRIMARY KEY (auto-generated, e.g., using uuid_generate_v4())
 - username: VARCHAR NOT NULL UNIQUE
 - email: VARCHAR NOT NULL UNIQUE
@@ -13,9 +14,11 @@ Database Schema Plan
 - created_at: timestamptz DEFAULT now()
 - updated_at: timestamptz DEFAULT now()
 
+
 ### flashcards
 - id: UUID PRIMARY KEY
 - user_id: UUID NOT NULL REFERENCES users(id)
+- generation_id
 - front: VARCHAR(220) NOT NULL
 - back: VARCHAR(500) NOT NULL
 - status: ENUM('pending', 'accepted-original', 'accepted-edited', 'rejected') NOT NULL
@@ -46,6 +49,7 @@ Database Schema Plan
 - One-to-Many: A user can have many flashcards (flashcards.user_id -> users.id).
 - One-to-Many: A user can have many AI generation sessions (ai_generation_sessions.user_id -> users.id).
 - One-to-Many: A user can have many generation error logs (generation_error_log.user_id -> users.id).
+- One-to-Many: Many flashcards can have the same generation_id (flashcards.generation_id - ai_generation_session.id)
 
 3. Indexes
 ----------
