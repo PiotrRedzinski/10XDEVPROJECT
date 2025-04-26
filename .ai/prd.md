@@ -36,12 +36,20 @@ Manualne tworzenie wysokiej jakości fiszek edukacyjnych jest czasochłonne i zn
 - Brak funkcjonalności historii zmian w edycji fiszek.
 
 ## 5. Historyjki użytkowników
-### US-001: Rejestracja i logowanie
-- Tytuł: Rejestracja i logowanie użytkowników
-- Opis: Użytkownik rejestruje się oraz loguje do systemu przy użyciu nazwy i hasła. System nie posiada zaawansowanych zabezpieczeń, a komunikaty o błędach są ograniczone do "brak konta" oraz "błędne hasło".
+## US-001: Bezpieczny dostęp i uwierzytelnianie
+
+- Tytuł: Bezpieczny dostęp
+- Opis: Jako użytkownik chcę mieć możliwość rejestracji i logowania się do systemu w sposób zapewniający bezpieczeństwo moich danych.
 - Kryteria akceptacji:
-  - Użytkownik może utworzyć konto.
-  - Podczas logowania, przy błędnych danych, wyświetlane są komunikaty: "brak konta" lub "błędne hasło".
+  - Logowanie i rejestracja odbywają się na dedykowanych stronach.
+  - Logowanie wymaga podania adresu email i hasła.
+  - Rejestracja wymaga podania adresu email, hasła i potwierdzenia hasła.
+  - bez zalogowania otwiera się tylko strona główna na której użytkownik może klinąć przycisk zaloguj
+  - Użytkownik NIE MOŻE korzystać z funkcji generowania fiszek i oglądania fiszek bez logowania się do systemu.
+  - Użytkownik może logować się do systemu poprzez przycisk zaloguj  po prawej stronie w górnym menu.
+  - Użytkownik może się wylogować z systemu poprzez ostatni przycisk po prowej stronie w górnym menu.
+  - Nie korzystamy z zewnętrznych serwisów logowania (np. Google, GitHub).
+  - Odzyskiwanie hasła powinno być możliwe.
 
 ### US-002: Generowanie fiszek przez AI
 - Tytuł: Automatyczne generowanie fiszek z tekstu
