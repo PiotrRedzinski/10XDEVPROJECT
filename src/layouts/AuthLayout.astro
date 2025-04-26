@@ -1,0 +1,30 @@
+---
+import { ViewTransitions } from 'astro:transitions';
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Authentication - 10xDev</title>
+    <ViewTransitions />
+  </head>
+  <body class="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <main class="container mx-auto px-4 py-8 md:py-16">
+      <div class="flex min-h-[calc(100vh-8rem)] flex-col items-center justify-center">
+        <div class="w-full max-w-md">
+          <div class="mb-8 text-center">
+            <a href="/" class="inline-block">
+              <h1 class="text-2xl font-bold text-gray-900">10xDev</h1>
+            </a>
+          </div>
+          
+          <div class="rounded-xl bg-white p-6 shadow-lg ring-1 ring-gray-900/5 sm:p-8">
+            <slot />
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html> 
