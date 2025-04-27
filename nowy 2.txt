@@ -1,0 +1,1 @@
+curl -X POST http://localhost:3000/api/ai/generate-flashcards -H "Content-Type: application/json" -d '{"text": "Explain the lifecycle of a star.", "userId": "test"}'
