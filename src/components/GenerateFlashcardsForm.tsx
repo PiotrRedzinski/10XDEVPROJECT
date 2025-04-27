@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Loader2, Check, X, Edit2 } from "lucide-react";
 import type { FlashcardDTO } from "@/types";
+import EditFlashcardDialog from "./EditFlashcardDialog";
+import type { UpdateFlashcardCommand } from "@/types";
 
 interface GenerateFormState {
   text: string;
@@ -8,6 +10,7 @@ interface GenerateFormState {
   error: string | null;
   characterCount: number;
   generatedFlashcards: FlashcardDTO[] | null;
+  editingFlashcardId: string | null;
 }
 
 const MIN_CHARS = 1000;
@@ -20,6 +23,7 @@ export default function GenerateFlashcardsForm() {
     error: null,
     characterCount: 0,
     generatedFlashcards: null,
+    editingFlashcardId: null,
   });
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -146,7 +150,7 @@ export default function GenerateFlashcardsForm() {
 
     try {
       if (action === "edit") {
-        // TODO: Implement edit modal
+        setState((prev) => ({ ...prev, editingFlashcardId: card.id }));
         return;
       }
 
@@ -187,6 +191,54 @@ export default function GenerateFlashcardsForm() {
     if (state.characterCount < MIN_CHARS) return "bg-gray-400";
     if (state.characterCount > MAX_CHARS) return "bg-airbnb-rausch";
     return "bg-airbnb-babu";
+  };
+
+  // Get the flashcard being edited (if any)
+  const flashcardBeingEdited =
+    state.editingFlashcardId && state.generatedFlashcards
+      ? state.generatedFlashcards.find((f) => f.id === state.editingFlashcardId) || null
+      : null;
+
+  // Handle canceling edit
+  const handleCancelEdit = () => {
+    setState((prev) => ({ ...prev, editingFlashcardId: null }));
+  };
+
+  // Handle saving edited flashcard
+  const handleSaveEdit = async (id: string, data: UpdateFlashcardCommand): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/flashcards/update`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          front: data.front,
+          back: data.back,
+          source: "ai",
+          status: "pending",
+          isAIGenerated: true,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || `Error: ${response.status}`);
+      }
+
+      // Update the flashcard in the local state
+      setState((prev) => ({
+        ...prev,
+        generatedFlashcards: prev.generatedFlashcards?.map((f) =>
+          f.id === id ? { ...f, front: data.front, back: data.back } : f
+        ),
+        editingFlashcardId: null,
+      }));
+
+      return true;
+    } catch (error) {
+      console.error("Failed to update flashcard:", error);
+      return false;
+    }
   };
 
   return (
@@ -303,6 +355,14 @@ export default function GenerateFlashcardsForm() {
           </div>
         </div>
       )}
+
+      {/* Edit dialog */}
+      <EditFlashcardDialog
+        flashcard={flashcardBeingEdited}
+        isOpen={state.editingFlashcardId !== null}
+        onClose={handleCancelEdit}
+        onSave={handleSaveEdit}
+      />
     </div>
   );
 }

@@ -1,0 +1,49 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+import AddCardForm from "../components/AddCardForm";
+import { createSupabaseServer } from "@/lib/supabase.server";
+
+// Disable static generation for this page
+export const prerender = false;
+
+// Get initial session
+const supabase = createSupabaseServer(Astro.cookies);
+const { data: { user } } = await supabase.auth.getUser();
+
+// This should never happen due to middleware, but just in case
+if (!user) {
+  return Astro.redirect('/login');
+}
+---
+
+<MainLayout title="Add Flashcard">
+  <div class="mx-auto max-w-4xl px-4 py-6 sm:px-6">
+    <div class="mb-4">
+      <h1 class="text-3xl font-bold text-airbnb-rausch">Add New Flashcard</h1>
+      <p class="text-airbnb-foggy mb-4">
+        Create a concise flashcard for effective learning.
+      </p>
+      
+      <div class="grid grid-cols-2 gap-x-4 gap-y-2 bg-[#F7F7F7] p-3 rounded-lg border border-gray-200 text-sm">
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-full bg-airbnb-rausch flex items-center justify-center text-white font-bold text-xs">1</div>
+          <div>
+            <h3 class="font-medium text-airbnb-hof">Front side</h3>
+            <p class="text-airbnb-foggy text-xs">Max 220 characters</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-6 h-6 rounded-full bg-airbnb-babu flex items-center justify-center text-white font-bold text-xs">2</div>
+          <div>
+            <h3 class="font-medium text-airbnb-hof">Back side</h3>
+            <p class="text-airbnb-foggy text-xs">Max 500 characters</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  
+    <div class="bg-white rounded-lg shadow p-4 border-0">
+      <AddCardForm client:load />
+    </div>
+  </div>
+</MainLayout> 

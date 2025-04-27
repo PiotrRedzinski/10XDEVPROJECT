@@ -14,12 +14,14 @@ export const createFlashcardSchema = z.object({
   front: z.string().max(220, "Front text must be 220 characters or less"),
   back: z.string().max(500, "Back text must be 500 characters or less"),
   generation_id: z.string().uuid().nullable().optional(),
+  status: z.string().optional(),
 });
 
 // Schema for validating flashcard updates
 export const updateFlashcardSchema = z.object({
   front: z.string().max(220, "Front text must be 220 characters or less"),
   back: z.string().max(500, "Back text must be 500 characters or less"),
+  status: z.string().optional(),
 });
 
 // Schema for validating status updates
@@ -35,7 +37,7 @@ export const paginationSchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(10),
   status: z.enum(["pending", "accepted-original", "accepted-edited", "rejected"]).optional(),
   sortBy: z.string().default("created_at"),
-  order: z.enum(["asc", "desc"]).default("desc"),
+  order: z.enum(["asc", "desc"]).nullable().default("desc"),
 });
 
 /**
@@ -53,14 +55,14 @@ export const flashcardsService = {
       limit?: number;
       status?: string;
       sortBy?: string;
-      order?: "asc" | "desc";
+      order?: "asc" | "desc" | null;
     },
     logger?: LoggingService
   ): Promise<{ flashcards: FlashcardDTO[]; pagination: PaginationDTO }> {
     // Validate params
     const validation = paginationSchema.safeParse(params);
     if (!validation.success) {
-      const errorMsg = `Invalid pagination parameters: ${validation.error.message}`;
+      const errorMsg = `Invalid pagination parameters: ${JSON.stringify(validation.error.errors)}`;
       logger?.logFlashcardError(new Error(errorMsg), "list", userId);
       throw new Error(errorMsg);
     }
@@ -154,7 +156,7 @@ export const flashcardsService = {
       throw new Error(errorMsg);
     }
 
-    const { front, back, generation_id } = validation.data;
+    const { front, back, generation_id, status } = validation.data;
 
     const { data, error } = await supabase
       .from("flashcards")
@@ -163,8 +165,8 @@ export const flashcardsService = {
         front,
         back,
         generation_id,
-        status: "pending", // Default status for new flashcards
-        source: generation_id ? "ai" : "manual",
+        status: status || "pending", // Use provided status or default to "pending"
+        source: generation_id ? "ai" : "self",
       })
       .select()
       .single();
@@ -204,15 +206,23 @@ export const flashcardsService = {
       throw error;
     }
 
-    const { front, back } = validation.data;
+    const { front, back, status } = validation.data;
+
+    // Create update object with required fields
+    const updateData: any = {
+      front,
+      back,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Add status if provided
+    if (status) {
+      updateData.status = status;
+    }
 
     const { data, error } = await supabase
       .from("flashcards")
-      .update({
-        front,
-        back,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", flashcardId)
       .eq("user_id", userId)
       .select()
