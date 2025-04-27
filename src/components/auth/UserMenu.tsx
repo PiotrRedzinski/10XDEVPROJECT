@@ -11,7 +11,14 @@ export function UserMenu({ userEmail }: UserMenuProps) {
   const handleLogout = async () => {
     try {
       setIsLoading(true);
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        console.error("Error signing out:", error);
+        return;
+      }
+
+      // Redirect to login page after successful logout
       window.location.href = "/login";
     } catch (error) {
       console.error("Error logging out:", error);

@@ -87,20 +87,29 @@ export class AIGenerationService {
       await this.cache.saveTextHash(text, session.id);
 
       // Insert flashcards in bulk
-      const { error: insertError } = await this.supabase.from("flashcards").insert(
-        generatedFlashcards.map((card) => ({
-          front: card.front,
-          back: card.back,
-          generation_id: session.id,
-          user_id: userId,
-          status: "pending",
-          source: "ai",
-        }))
-      );
+      const { data: insertedFlashcards, error: insertError } = await this.supabase
+        .from("flashcards")
+        .insert(
+          generatedFlashcards.map((card) => ({
+            front: card.front,
+            back: card.back,
+            generation_id: session.id,
+            user_id: userId,
+            status: "pending",
+            source: "ai",
+          }))
+        )
+        .select();
 
       if (insertError) {
         await this.logger.error("Failed to insert flashcards", { userId, sessionId: session.id, error: insertError });
         throw new Error(`Failed to insert flashcards: ${insertError.message}`);
+      }
+
+      // Make sure we have the flashcards with their IDs
+      if (!insertedFlashcards || insertedFlashcards.length === 0) {
+        await this.logger.error("Flashcards were inserted but not returned", { userId, sessionId: session.id });
+        throw new Error("Flashcards were inserted but not returned by the database");
       }
 
       // Calculate metrics
@@ -138,7 +147,7 @@ export class AIGenerationService {
       });
 
       return {
-        flashcards: generatedFlashcards,
+        flashcards: insertedFlashcards,
         sessionMetrics: metrics,
       };
     } catch (error) {
