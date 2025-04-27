@@ -53,6 +53,7 @@ export interface CreateFlashcardCommand {
   front: string;
   back: string;
   generation_id?: string | null;
+  status?: "accepted-original" | string;
 }
 
 /**
@@ -62,6 +63,7 @@ export interface CreateFlashcardCommand {
 export interface UpdateFlashcardCommand {
   front: string;
   back: string;
+  status?: string;
 }
 
 /**

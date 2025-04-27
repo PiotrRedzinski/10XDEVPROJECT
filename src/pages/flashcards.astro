@@ -1,0 +1,33 @@
+---
+import MainLayout from "../layouts/MainLayout.astro";
+import FlashcardList from "../components/FlashcardList";
+import { createSupabaseServer } from "@/lib/supabase.server";
+
+// Disable static generation for this page
+export const prerender = false;
+
+// Get initial session
+const supabase = createSupabaseServer(Astro.cookies);
+const { data: { user } } = await supabase.auth.getUser();
+
+// Redirect if not authenticated
+if (!user) {
+  return Astro.redirect('/login');
+}
+---
+
+<MainLayout title="My Flashcards">
+  <div class="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+    <div class="flex flex-wrap items-center justify-between mb-4">
+      <div>
+        <h1 class="text-3xl font-bold text-airbnb-rausch">My Flashcards</h1>
+        <p class="text-airbnb-foggy">View, edit, and manage your flashcard collection</p>
+      </div>
+      <a href="/addCard" class="bg-airbnb-rausch text-white px-3 py-1.5 rounded-lg font-medium hover:bg-[#FF385C] transition-colors duration-150 mt-2 sm:mt-0">
+        Add New Flashcard
+      </a>
+    </div>
+    
+    <FlashcardList client:load />
+  </div>
+</MainLayout> 

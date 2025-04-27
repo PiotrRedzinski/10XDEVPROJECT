@@ -17,35 +17,30 @@ if (!user) {
 ---
 
 <MainLayout title="Generate Flashcards">
-  <div class="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
     <div class="mx-auto max-w-2xl lg:mx-0">
-      <h1 class="text-4xl font-bold text-airbnb-rausch mb-4">Generate Flashcards</h1>
-      <p class="text-airbnb-foggy text-lg mb-8">
-        Transform your text into effective flashcards using AI. Simply paste or type your text below,
-        and our AI will generate a set of flashcards to help you learn the material.
+      <h1 class="text-4xl font-bold text-airbnb-rausch mb-3">Generate Flashcards</h1>
+      <p class="text-airbnb-foggy mb-5">
+        Transform your text into effective flashcards using AI. Paste or type your text below.
       </p>
       
-      <div class="mt-8 grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 bg-[#F7F7F7] p-6 rounded-lg border border-gray-200">
-        <div class="flex items-start space-x-3">
-          <div class="w-8 h-8 rounded-full bg-airbnb-rausch flex items-center justify-center text-white font-bold">1</div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#F7F7F7] p-5 rounded-lg border border-gray-200 mb-3">
+        <div class="flex items-start space-x-2">
+          <div class="w-7 h-7 rounded-full bg-airbnb-rausch flex items-center justify-center text-white font-bold">1</div>
           <div>
-            <h3 class="font-semibold text-airbnb-hof">Minimum text length</h3>
-            <p class="text-airbnb-foggy">1,000 characters</p>
+            <h3 class="font-semibold text-airbnb-hof">Min length: 1,000 chars</h3>
           </div>
         </div>
-        <div class="flex items-start space-x-3">
-          <div class="w-8 h-8 rounded-full bg-airbnb-babu flex items-center justify-center text-white font-bold">2</div>
+        <div class="flex items-start space-x-2">
+          <div class="w-7 h-7 rounded-full bg-airbnb-babu flex items-center justify-center text-white font-bold">2</div>
           <div>
-            <h3 class="font-semibold text-airbnb-hof">Maximum text length</h3>
-            <p class="text-airbnb-foggy">10,000 characters</p>
+            <h3 class="font-semibold text-airbnb-hof">Max length: 10,000 chars</h3>
           </div>
         </div>
       </div>
     </div>
-  </div>
   
-  <div class="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-    <div class="bg-white rounded-xl shadow-lg p-8 border-0 overflow-hidden">
+    <div class="bg-white rounded-xl shadow-lg p-6 pt-3 border-0 overflow-hidden">
       <GenerateFlashcardsForm client:load />
     </div>
   </div>

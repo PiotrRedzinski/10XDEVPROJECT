@@ -4,8 +4,18 @@ import { createSupabaseServer } from "@/lib/supabase.server";
 
 export const prerender = false;
 
+// Create separate schema for validation of input and transformed data
+const inputSchema = z.object({
+  id: z.string().uuid("ID must be a valid UUID").optional(),
+  front: z.string(),
+  back: z.string(),
+  status: z.enum(["pending", "accepted-original", "accepted-edited", "rejected"]).optional().default("pending"),
+  source: z.enum(["ai", "self"]).optional(),
+  isAIGenerated: z.boolean().optional(),
+});
+
 const updateFlashcardSchema = z.object({
-  id: z.string(),
+  id: z.string().uuid("ID must be a valid UUID"),
   front: z.string(),
   back: z.string(),
   status: z.enum(["pending", "accepted-original", "accepted-edited", "rejected"]),
@@ -29,7 +39,20 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Parse and validate request body
     const body = await request.json();
-    const validatedData = updateFlashcardSchema.parse(body);
+
+    // First validate the input with more permissive schema
+    const validatedInput = inputSchema.parse(body);
+
+    // Prepare complete data
+    const completeData = {
+      ...validatedInput,
+      id: validatedInput.id || crypto.randomUUID(),
+      source: validatedInput.isAIGenerated ? "ai" : validatedInput.source || "self",
+      status: validatedInput.status || "pending",
+    };
+
+    // Now validate with strict schema
+    const validatedData = updateFlashcardSchema.parse(completeData);
 
     // Update flashcard
     const { error } = await supabase
