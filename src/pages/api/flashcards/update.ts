@@ -25,12 +25,14 @@ const updateFlashcardSchema = z.object({
 export const POST: APIRoute = async ({ request, cookies }) => {
   try {
     const supabase = createSupabaseServer(cookies);
+    console.log("Flashcard update API called");
 
     // Get user session
     const {
       data: { session },
     } = await supabase.auth.getSession();
     if (!session) {
+      console.log("Unauthorized: No session found");
       return new Response(JSON.stringify({ message: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -39,23 +41,27 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
     // Parse and validate request body
     const body = await request.json();
+    console.log("Request body:", body);
 
     // First validate the input with more permissive schema
     const validatedInput = inputSchema.parse(body);
+    console.log("Validated input:", validatedInput);
 
     // Prepare complete data
     const completeData = {
       ...validatedInput,
       id: validatedInput.id || crypto.randomUUID(),
-      source: validatedInput.isAIGenerated ? "ai" : validatedInput.source || "self",
+      source: validatedInput.isAIGenerated === true ? "ai" : validatedInput.source || "self",
       status: validatedInput.status || "pending",
     };
+    console.log("Complete data:", completeData);
 
     // Now validate with strict schema
     const validatedData = updateFlashcardSchema.parse(completeData);
+    console.log("Validated data for update:", validatedData);
 
     // Update flashcard
-    const { error } = await supabase
+    const { data: updateData, error } = await supabase
       .from("flashcards")
       .update({
         front: validatedData.front,
@@ -67,23 +73,47 @@ export const POST: APIRoute = async ({ request, cookies }) => {
       .eq("id", validatedData.id)
       .eq("user_id", session.user.id);
 
+    console.log("Update result:", { data: updateData, error });
+
     if (error) {
       console.error("Error updating flashcard:", error);
-      return new Response(JSON.stringify({ message: "Failed to update flashcard" }), {
+      return new Response(JSON.stringify({ message: "Failed to update flashcard", error: error.message }), {
         status: 500,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    return new Response(JSON.stringify({ message: "Flashcard updated successfully" }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    // Get the updated flashcard to verify status
+    const { data: updatedFlashcard, error: getError } = await supabase
+      .from("flashcards")
+      .select("*")
+      .eq("id", validatedData.id)
+      .eq("user_id", session.user.id)
+      .single();
+
+    console.log("Verification fetch:", { flashcard: updatedFlashcard, error: getError });
+
+    return new Response(
+      JSON.stringify({
+        message: "Flashcard updated successfully",
+        flashcard: updatedFlashcard,
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (error) {
     console.error("Error in flashcard update endpoint:", error);
-    return new Response(JSON.stringify({ message: "Internal server error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        message: "Internal server error",
+        error: error instanceof Error ? error.message : String(error),
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 };

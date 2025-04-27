@@ -1,16 +1,30 @@
 import { useState } from "react";
 import { Loader2, Check, X, Edit2 } from "lucide-react";
-import type { FlashcardDTO } from "@/types";
 import EditFlashcardDialog from "./EditFlashcardDialog";
 import type { UpdateFlashcardCommand } from "@/types";
+
+// Define the GeneratedFlashcard type to fix type errors
+interface GeneratedFlashcard {
+  id: string;
+  front: string;
+  back: string;
+  source: "self" | "ai";
+  status: "pending" | "accepted-original" | "accepted-edited" | "rejected";
+  generation_id: string | null;
+  user_id: string;
+  created_at: string | null;
+  updated_at: string | null;
+}
 
 interface GenerateFormState {
   text: string;
   isLoading: boolean;
   error: string | null;
   characterCount: number;
-  generatedFlashcards: FlashcardDTO[] | null;
+  success?: boolean;
+  generatedFlashcards: GeneratedFlashcard[] | null;
   editingFlashcardId: string | null;
+  editingFlashcard: { front: string; back: string } | null;
 }
 
 const MIN_CHARS = 1000;
@@ -24,6 +38,7 @@ export default function GenerateFlashcardsForm() {
     characterCount: 0,
     generatedFlashcards: null,
     editingFlashcardId: null,
+    editingFlashcard: null,
   });
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -71,6 +86,13 @@ export default function GenerateFlashcardsForm() {
       }
 
       const data = await response.json();
+      console.log("Generated flashcards with IDs:", data.flashcards);
+
+      // Ensure each flashcard has a generation_id for later use
+      if (data.flashcards?.length > 0 && !data.flashcards[0].generation_id) {
+        console.error("Flashcards are missing generation_id");
+      }
+
       setState((prev) => ({
         ...prev,
         generatedFlashcards: data.flashcards,
@@ -90,6 +112,7 @@ export default function GenerateFlashcardsForm() {
     if (!state.generatedFlashcards) return;
 
     try {
+      // First update all flashcards to accepted status
       const response = await fetch("/api/flashcards/bulk-update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -98,15 +121,70 @@ export default function GenerateFlashcardsForm() {
             id: String(card.id),
             front: card.front,
             back: card.back,
-            source: card.source,
+            source: "ai",
             status: "accepted-original",
+            isAIGenerated: true,
           })),
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to accept flashcards");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Failed to accept flashcards");
+      }
+
+      // Group flashcards by generation_id and count them
+      const generationCounts = new Map<string, number>();
+
+      // Count cards per generation_id
+      state.generatedFlashcards.forEach((card) => {
+        if (card.generation_id) {
+          const count = generationCounts.get(card.generation_id) || 0;
+          generationCounts.set(card.generation_id, count + 1);
+        } else {
+          console.error("Flashcard missing generation_id:", card);
+        }
+      });
+
+      if (generationCounts.size === 0) {
+        console.error("No valid generation IDs found in flashcards");
+      } else {
+        console.log("Bulk increment counts:", Array.from(generationCounts.entries()));
+
+        // Update counters for each generation session in a single operation per generation
+        const bulkUpdatePromises = Array.from(generationCounts.entries()).map(([generationId, count]) => {
+          return fetch("/api/generation-sessions/bulk-increment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              generationId,
+              counterType: "accepted_original",
+              incrementBy: count,
+            }),
+          })
+            .then((response) => {
+              if (!response.ok) {
+                console.warn(
+                  `Failed to bulk update counter for generation ${generationId}:`,
+                  response.status,
+                  response.statusText
+                );
+              }
+              return response;
+            })
+            .catch((error) => {
+              console.error(`Error incrementing counter for generation ${generationId}:`, error);
+              return null;
+            });
+        });
+
+        // Wait for all updates to complete
+        await Promise.all(bulkUpdatePromises);
+      }
+
       window.location.href = "/flashcards";
-    } catch (error) {
+    } catch (err) {
+      console.error("Error accepting all flashcards:", err);
       setState((prev) => ({
         ...prev,
         error: "Failed to accept flashcards. Please try again.",
@@ -118,23 +196,71 @@ export default function GenerateFlashcardsForm() {
     if (!state.generatedFlashcards) return;
 
     try {
-      const response = await fetch("/api/flashcards/bulk-update", {
+      // Group flashcards by generation_id and count them
+      const generationCounts = new Map<string, number>();
+
+      // Count cards per generation_id
+      state.generatedFlashcards.forEach((card) => {
+        if (card.generation_id) {
+          const count = generationCounts.get(card.generation_id) || 0;
+          generationCounts.set(card.generation_id, count + 1);
+        } else {
+          console.error("Flashcard missing generation_id:", card);
+        }
+      });
+
+      // Delete all flashcards
+      const response = await fetch("/api/flashcards/bulk-delete", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          flashcards: state.generatedFlashcards.map((card) => ({
-            id: String(card.id),
-            front: card.front,
-            back: card.back,
-            source: card.source,
-            status: "rejected",
-          })),
+          flashcardIds: state.generatedFlashcards.map((card) => String(card.id)),
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to reject flashcards");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || "Failed to reject flashcards");
+      }
+
+      // Update counters for rejected flashcards
+      if (generationCounts.size > 0) {
+        console.log("Bulk increment counts for rejected cards:", Array.from(generationCounts.entries()));
+
+        // Update rejected counters for each generation session
+        const bulkUpdatePromises = Array.from(generationCounts.entries()).map(([generationId, count]) => {
+          return fetch("/api/generation-sessions/bulk-increment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              generationId,
+              counterType: "rejected",
+              incrementBy: count,
+            }),
+          })
+            .then((response) => {
+              if (!response.ok) {
+                console.warn(
+                  `Failed to bulk update rejected counter for generation ${generationId}:`,
+                  response.status,
+                  response.statusText
+                );
+              }
+              return response;
+            })
+            .catch((error) => {
+              console.error(`Error incrementing rejected counter for generation ${generationId}:`, error);
+              return null;
+            });
+        });
+
+        // Wait for all updates to complete
+        await Promise.all(bulkUpdatePromises);
+      }
+
       setState((prev) => ({ ...prev, generatedFlashcards: null }));
-    } catch (error) {
+    } catch (err) {
+      console.error("Error rejecting all flashcards:", err);
       setState((prev) => ({
         ...prev,
         error: "Failed to reject flashcards. Please try again.",
@@ -142,41 +268,93 @@ export default function GenerateFlashcardsForm() {
     }
   };
 
-  const handleCardAction = async (index: number, action: "accept" | "reject" | "edit") => {
-    if (!state.generatedFlashcards) return;
-
-    const card = state.generatedFlashcards[index];
-    if (!card) return;
-
+  const handleCardAction = async (action: "accept" | "reject" | "edit", card: GeneratedFlashcard) => {
     try {
+      // For edit action, just set the editing state and return
       if (action === "edit") {
-        setState((prev) => ({ ...prev, editingFlashcardId: card.id }));
+        setState((prev) => ({
+          ...prev,
+          editingFlashcardId: card.id,
+          editingFlashcard: { front: card.front, back: card.back },
+        }));
         return;
       }
 
-      const response = await fetch("/api/flashcards/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: card.id,
-          front: card.front,
-          back: card.back,
-          source: card.source,
-          status: action === "accept" ? "accepted-original" : "rejected",
-        }),
-      });
+      // For accept and reject actions, proceed as before
+      let counterType: "accepted_original" | "accepted_edited" | "rejected";
 
-      if (!response.ok) throw new Error(`Failed to ${action} flashcard`);
+      if (action === "accept") {
+        counterType = "accepted_original";
 
-      // Update local state
+        // Accept the flashcard by updating it
+        const response = await fetch("/api/flashcards/update", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: String(card.id),
+            front: card.front,
+            back: card.back,
+            source: "ai",
+            status: "accepted-original",
+            isAIGenerated: true,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update flashcard");
+        }
+      } else {
+        // Reject the flashcard by deleting it
+        counterType = "rejected";
+
+        const response = await fetch("/api/flashcards/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: String(card.id),
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to delete flashcard");
+        }
+      }
+
+      // Update the counter for this generation session
+      if (card.generation_id) {
+        console.log(`Incrementing ${counterType} counter for generation ${card.generation_id}`);
+
+        const updateSessionResponse = await fetch("/api/generation-sessions/bulk-increment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            generationId: card.generation_id,
+            counterType,
+            incrementBy: 1,
+          }),
+        });
+
+        if (!updateSessionResponse.ok) {
+          console.warn(
+            "Failed to update generation session counter:",
+            updateSessionResponse.status,
+            updateSessionResponse.statusText
+          );
+        }
+      } else {
+        console.error("Cannot increment counter - card missing generation_id:", card);
+      }
+
+      // Remove the card from the UI
       setState((prev) => ({
         ...prev,
-        generatedFlashcards: prev.generatedFlashcards?.filter((_, i) => i !== index) || null,
+        generatedFlashcards: prev.generatedFlashcards?.filter((c) => c.id !== card.id) || null,
       }));
-    } catch (error) {
+    } catch (err) {
+      console.error("Error handling card action:", err);
       setState((prev) => ({
         ...prev,
-        error: `Failed to ${action} flashcard. Please try again.`,
+        error: "Failed to process action. Please try again.",
       }));
     }
   };
@@ -207,6 +385,22 @@ export default function GenerateFlashcardsForm() {
   // Handle saving edited flashcard
   const handleSaveEdit = async (id: string, data: UpdateFlashcardCommand): Promise<boolean> => {
     try {
+      // Get the original flashcard
+      const flashcard = state.generatedFlashcards?.find((f) => f.id === id);
+      if (!flashcard) {
+        throw new Error("Flashcard not found");
+      }
+
+      // Check if there are actual changes
+      const hasChanges = data.front !== flashcard.front || data.back !== flashcard.back;
+
+      if (!hasChanges) {
+        // No changes, just close the dialog
+        setState((prev) => ({ ...prev, editingFlashcardId: null }));
+        return true;
+      }
+
+      // Now update the flashcard with edited values
       const response = await fetch(`/api/flashcards/update`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -215,7 +409,7 @@ export default function GenerateFlashcardsForm() {
           front: data.front,
           back: data.back,
           source: "ai",
-          status: "pending",
+          status: "accepted-edited",
           isAIGenerated: true,
         }),
       });
@@ -225,18 +419,33 @@ export default function GenerateFlashcardsForm() {
         throw new Error(errorData?.message || `Error: ${response.status}`);
       }
 
-      // Update the flashcard in the local state
+      // Update counter for edited card
+      if (flashcard.generation_id) {
+        const counterResponse = await fetch("/api/generation-sessions/bulk-increment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            generationId: flashcard.generation_id,
+            counterType: "accepted_edited",
+            incrementBy: 1,
+          }),
+        });
+
+        if (!counterResponse.ok) {
+          console.warn("Failed to update counter for edited card");
+        }
+      }
+
+      // Remove the card from UI as it's now been accepted with edits
       setState((prev) => ({
         ...prev,
-        generatedFlashcards: prev.generatedFlashcards?.map((f) =>
-          f.id === id ? { ...f, front: data.front, back: data.back } : f
-        ),
+        generatedFlashcards: prev.generatedFlashcards?.filter((f) => f.id !== id) || null,
         editingFlashcardId: null,
       }));
 
       return true;
-    } catch (error) {
-      console.error("Failed to update flashcard:", error);
+    } catch (err) {
+      console.error("Failed to update flashcard:", err);
       return false;
     }
   };
@@ -329,21 +538,21 @@ export default function GenerateFlashcardsForm() {
                 </div>
                 <div className="flex justify-end space-x-2 pt-4">
                   <button
-                    onClick={() => handleCardAction(index, "accept")}
+                    onClick={() => handleCardAction("accept", card)}
                     className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
                     title="Accept"
                   >
                     <Check className="h-5 w-5" />
                   </button>
                   <button
-                    onClick={() => handleCardAction(index, "edit")}
+                    onClick={() => handleCardAction("edit", card)}
                     className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
                     title="Edit"
                   >
                     <Edit2 className="h-5 w-5" />
                   </button>
                   <button
-                    onClick={() => handleCardAction(index, "reject")}
+                    onClick={() => handleCardAction("reject", card)}
                     className="p-2 text-airbnb-rausch hover:bg-red-50 rounded-full transition-colors"
                     title="Reject"
                   >

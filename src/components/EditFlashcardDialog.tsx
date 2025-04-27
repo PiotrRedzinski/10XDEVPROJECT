@@ -24,6 +24,8 @@ interface EditFlashcardFormViewModel {
   id: string;
   front: string;
   back: string;
+  originalFront: string;
+  originalBack: string;
   isSubmitting: boolean;
   errors: {
     front?: string;
@@ -41,6 +43,8 @@ export default function EditFlashcardDialog({ flashcard, isOpen, onClose, onSave
     id: flashcard?.id || "",
     front: flashcard?.front || "",
     back: flashcard?.back || "",
+    originalFront: flashcard?.front || "",
+    originalBack: flashcard?.back || "",
     isSubmitting: false,
     errors: {},
   });
@@ -52,11 +56,16 @@ export default function EditFlashcardDialog({ flashcard, isOpen, onClose, onSave
         id: flashcard.id,
         front: flashcard.front,
         back: flashcard.back,
+        originalFront: flashcard.front,
+        originalBack: flashcard.back,
         isSubmitting: false,
         errors: {},
       });
     }
   }, [flashcard]);
+
+  // Check if form has been modified
+  const hasChanges = formState.front !== formState.originalFront || formState.back !== formState.originalBack;
 
   // Handle form input changes
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -98,6 +107,12 @@ export default function EditFlashcardDialog({ flashcard, isOpen, onClose, onSave
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Don't submit if nothing has changed
+    if (!hasChanges) {
+      onClose();
+      return;
+    }
 
     // Validate form first
     if (!validateForm()) return;
@@ -202,7 +217,11 @@ export default function EditFlashcardDialog({ flashcard, isOpen, onClose, onSave
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={formState.isSubmitting} className="bg-airbnb-rausch hover:bg-[#FF385C]">
+            <Button
+              type="submit"
+              disabled={formState.isSubmitting || !hasChanges}
+              className={`${hasChanges ? "bg-airbnb-rausch hover:bg-[#FF385C]" : "bg-gray-300 cursor-not-allowed"}`}
+            >
               {formState.isSubmitting ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
