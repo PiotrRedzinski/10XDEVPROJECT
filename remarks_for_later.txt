@@ -624,3 +624,821 @@ Zanim rozpoczniemy, zadaj mi 5 kluczowych pytań technicznych adresujących niej
 4. nie implementuj "returnUrl"
 5. AuthLayout.astro nie jest przygotowany do obsługi stanu zalogowania użytkownika, dodaj Topbar z informacją o nazwie zalogowanego użytkownika i opcją wylogowania
 
+
+
+ooooooooooooooooooooooooooooooooooooo
+1.Jakie są główne widoki aplikacji (np. ekran logowania, rejestracji, dashboard, szczegóły fiszki, ekran edycji, ekran generowania AI, historia sesji AI) wynikające z wymagań PRD i dostępnych endpointów API?
+2.Jakie przepływy użytkownika są krytyczne w MVP, obejmujące m.in. rejestrację, logowanie, generację fiszek, akceptację/odrzucenie, ręczne tworzenie oraz edycję fiszek?
+3.Jaka powinna być hierarchia widoków i organizacja nawigacji, aby efektywnie korzystać z dostępnych endpointów API oraz zapewnić intuicyjną ścieżkę użytkownika?
+4.Czy interfejs powinien wykorzystywać boczną nawigację, górny pasek lub inny wzorzec nawigacyjny, i jak powinny być rozmieszczone akcje takie jak logowanie, rejestracja oraz wylogowanie?
+5.Jakie mechanizmy zarządzania stanem aplikacji (np. React Query, SWR lub kontekst React) będą wdrożone w celu synchronizacji danych z API?
+6.Jakie wymagania dotyczące responsywności i adaptacji interfejsu muszą zostać spełnione, aby aplikacja była użyteczna na różnych urządzeniach (desktop, tablet, mobile)?
+7.Jakie standardy dostępności (accessibility), takie jak odpowiednie znaczniki HTML, kontrast kolorów oraz wsparcie ARIA, powinny być wdrożone w interfejsie użytkownika?
+8.Jakie mechanizmy zabezpieczeń i autoryzacji (np. integracja JWT, ochrona widoków) muszą być wdrożone na poziomie UI, aby współpracować z mechanizmami API?
+9.W jaki sposób aplikacja powinna obsługiwać stany błędów i wyjątki zwracane przez API, takie jak komunikaty dla błędów 400, 401, 404, 500?
+10.Czy należy wdrożyć strategie buforowania lub optymalizacji (np. caching) w komunikacji z API, aby poprawić wydajność interfejsu?
+11.Czy poza Astro, React, Tailwind i Shadcn/ui, istnieje potrzeba zastosowania dodatkowych bibliotek lub rozwiązań dla zwiększenia interaktywności i spójności designu?
+
+1. główne widoki aplikacji to ekran logowania, rejestracji, dashboard, szczegóły fiszki, ekran edycji, ekran generowania AI
+2. chcemy aby użytkownik się zalogował, a następnie żeby mógł przejść do ekranu generowani fiszek, wygenerować je i dokonać recenzji: zatwierdzić, odrzucić lub zmodyfikować, użytkownik ponadto powienien móc zatwierdzić lub odrzucić grupowo wszystki wygenerowane fiszki
+4. interfejs powinien wykorzystywać górny pasek do nawigacji z następującą kolejnością pól: nazwa aplikacji, moduł generowania fiszek, nazwa zalogowanego użytkownika lub opcja zaloguj, a na końcu opcja wylogowania jeśli użytkownik jest zalogowanych
+5. skorzystajmy z React hook i react context do zarządzania stanem, a jeśli będzie potrzeba dodamy zustand
+6. korzystajmy z gotowych komponentów shadcn
+8. skupmy się na razie na widoku, później dodamy JWT 
+9. błędy i wyjątki zwracane przez api zgodnie z api-plan.md 400, 401, 404, 500, wyświetlanie komunikatów o błędach inline
+10. na razie pomiń strategie buforowanie i optymalizacji
+11. Astro, React, Tailwind i Shadcn/ui powinny wystarczyć
+
+---------------następna runda
+1Czy widoki logowania i rejestracji będą posiadały wspólny layout, czy każdy z nich powinien mieć unikalny projekt?
+2W jaki sposób użytkownik przechodzi z dashboardu do ekranu generowania fiszek – czy nawigacja w top-bar jest wystarczająca, czy potrzebne będą dodatkowe elementy interfejsu?
+3Jakie szczegóły powinny być zawarte na ekranie generowania fiszek, aby umożliwić zarówno indywidualną, jak i zbiorową recenzję (zatwierdzanie, odrzucanie, modyfikację)?
+4Czy interakcje grupowe (zatwierdzanie/odrzucanie wszystkich wygenerowanych fiszek) będą realizowane poprzez zaznaczanie checkboxów lub inny mechanizm selekcji?
+5Jak dokładnie ma działać top-bar – czy oprócz nazwy aplikacji i modułu generacji powinien dynamicznie wyświetlać nazwę użytkownika oraz opcje logowania/wylogowania w zależności od stanu sesji?
+6W jaki sposób mają być prezentowane komunikaty o błędach inline (np. jako alerty, tooltipy lub dedykowane pola pod formularzami)?
+7Jakie konkretne komponenty z shadcn/ui planujemy wykorzystać do budowy formularzy, tabel, przycisków i powiadomień?
+8Czy dashboard ma zawierać podsumowanie statusów fiszek (np. liczba zatwierdzonych, odrzuconych, oczekujących), oraz czy dane te mają być pobierane dynamicznie z API?
+9Jak zorganizować zarządzanie stanem aplikacji przy użyciu React hooków i React Context – które dane (np. sesja użytkownika, lista fiszek) powinny być globalnie dostępne?
+10 Jakie breakpointy oraz techniki Tailwind CSS zostaną zastosowane, aby zapewnić responsywność interfejsu na różnych urządzeniach?
+
+1. zachowajmy wspólny layout dla logowania i rejestracji
+2. użytkownik przechodzi do generowanie fiszek przez opcję w top-bar, dodaj w top-bar również opcję wyświetlania wszystkich fiszek użytkownika, zaraz za opcją generorowania
+3. ekran generowania fiszek powinien zawierać pole tekstowe i przycisk "Generuj Fiszki", po wygenerowaniu powinny pojawić się karty fiszek z opcjami: Zatwierdź, Edytuj, Odrzuć, a pod kartami fiszek przyciski: "Zatwierdź wszystkie", "Odrzuć wszystkie" 
+4. grupowe zatwierdzanie powinno być realizowane przez przyciski "Zatwierdź wszystkie", "Odrzuć wszystkie"
+5. top-bar powinien zmieniać wygląd w zależności od stanu sesji, dla użytkownika zalogowanego powinny być elementy: nazwa aplikacji, moduł generowania fiszek, moduł listy fiszek użytkownika, nazwa zalogowanego użytkownika, opcja wyloguj. Dla niezalogowanego użytkownika powinny zostać wyświetlone następujące elementy: nazwa aplikacji, opcja zaloguj
+6. komunikaty o błędach mają być wyświetlane inline
+7. potrzebne komponenty z shadcn/ui to przyciski, pole tekstowe, karty do fiszek. ta lista może zostać uzupełniona w zależości od potrzeba
+8. podsumowanie statusów fiszek nie powinno znajdować się w dashboardzie
+9. każdy użytkownik będzie miał osobną sesję i osobną listę fiszek
+10. jako eksport  tematu dobierz minimalny zestaw breakpointów i technik Tailwind CSS do zapewnienia responsywności interfejsu. skupiamy się tylko na interfejsie desktop, pamiętaj że to jest MVP
+
+-----następna runda
+1.Czy wspólny layout dla logowania i rejestracji ma zawierać identyczne elementy wizualne, czy przewidujemy niewielkie różnice w zależności od kontekstu (np. dodatkowe informacje w rejestracji)?
+2.Czy po kliknięciu opcji w top-bar użytkownik powinien być natychmiast przeniesiony do ekranu generowania fiszek, czy warto zastosować dodatkowe potwierdzenie lub podpowiedź?
+3.Jakie informacje i wskazówki powinny towarzyszyć polu tekstowemu na ekranie generowania fiszek, by użytkownik wiedział, jakie dane wprowadzić?
+4.Czy karty fiszek mają być wyświetlane natychmiast po zakończeniu procesu generowania, czy też system powinien najpierw wyświetlić komunikat o sukcesie przed pojawieniem się kart?
+5.Czy mechanizm grupowego zatwierdzania/odrzucania (przyciski "Zatwierdź wszystkie", "Odrzuć wszystkie") powinien posiadać dodatkowe warstwy weryfikacji (np. modal potwierdzenia) w razie przypadkowego kliknięcia?
+6.W jaki sposób top-bar powinien dynamicznie reagować na zmianę stanu sesji – czy poza zmianą widocznych elementów planujemy również drobne animacje lub zmiany kolorystyczne dla wyróżnienia stanu?
+7.Czy inline komunikaty o błędach mają być widoczne bezpośrednio przy danym komponencie (np. pod polem tekstowym) czy w dedykowanej strefie komunikatów, i czy mają być formatowane w konkretny sposób?
+8.Czy istnieje potrzeba rozszerzenia minimalnego zestawu komponentów shadcn/ui (przyciski, pole tekstowe, karty) o inne elementy już na tym etapie, czy wystarczy podstawowa implementacja?
+9.Jakie specyficzne breakpointy Tailwind CSS są preferowane dla interfejsu desktop – czy wystarczy przyjąć standardowe ustawienia (np. md lub lg) jako punkt odniesienia dla MVP?
+10.Czy zarządzanie stanem sesji użytkownika należy traktować jako oddzielny kontekst w React Context, czy też może być scalone z innymi globalnymi stanami aplikacji (np. listą fiszek)?
+
+1. w layout dla logowania i rejestracji wystarczy user email i hasło, nazwa użytkownika będzie adresem email
+2. po kliknięciu opcji "Generuj Fiszki" w top-bar użytkownik powinien być natychmiast przeniesiony do ekranu generowania fiszek
+3. w polu tekstowym powina znaleźć się informacja "Wprowadź tekst od długości od 1000 do 10000 znaków"
+4. karty fiszek mają być wyświetlane natychmiast po zakończeniu procesu generowania
+5. mechanizm grupowego zatwierdzania/odrzucania (przyciski "Zatwierdź wszystkie", "Odrzuć wszystkie") nie potrzebuje dodatkowych warstw weryfikacji
+6. top-bar nie powinien dynamicznie reagować na zmianę stanu sesji, poza zmianą dostępnych opcji
+7. inline komunikaty o błędach mają być widoczne bezpośrednio przy danym komponencie
+8. nie istnieje potrzeba rozszerzenia minimalnego zestawu komponentów shadcn/ui (przyciski, pole tekstowe, karty) o inne elementy już na tym etapie
+9. wystarczy przyjąć standardowe ustawienia Tailwind CSS (np. md lub lg) jako punkt odniesienia dla MVP
+10. zarządzanie stanem sesji użytkownika należy traktować jako oddzielny kontekst w React Context może być scalone z innymi globalnymi stanami aplikacji
+
+
+------------
+Czy prezentacja fiszek w siatce, z trzema fiszkami na wiersz, ma dotyczyć wyłącznie ekranu generowania fiszek, czy także widoku listy wszystkich fiszek?
+Czy widok siatki powinien być sztywno ustawiony na desktopie, z uwzględnieniem standardowych breakpointów Tailwind CSS (np. md, lg), czy istnieje potrzeba jakiejkolwiek elastyczności przy skalowaniu okna?
+
+1. prezentacja fiszek w siatce, z trzema fiszkami na wiersz, ma dotyczyć wszystkich widoków na których są prezentowane fiszki
+2. widok siatki powinien być ustawiony na sztywno
+
+
+generowanie ui-plan.md
+
+
+<conversation_summary>
+<decisions>
+Używamy wspólnego layoutu dla widoków logowania i rejestracji, gdzie jedynymi polami są email (pełniący rolę nazwy użytkownika) oraz hasło.
+Po kliknięciu opcji "Generuj Fiszki" w top-bar użytkownik jest natychmiast przekierowywany do ekranu generowania fiszek.
+Ekran generowania fiszek zawiera pole tekstowe z placeholderem "Wprowadź tekst od długości od 1000 do 10000 znaków" oraz przycisk "Generuj Fiszki".
+Po zakończeniu procesu generowania, karty fiszek pojawiają się natychmiast w widoku.
+Użytkownik ma możliwość wykonania grupowych operacji zatwierdzania ("Zatwierdź wszystkie") i odrzucania ("Odrzuć wszystkie") bez dodatkowych warstw weryfikacji.
+Top-bar wyświetla odpowiednie opcje w zależności od stanu sesji: dla zalogowanych – nazwa aplikacji, moduł generowania fiszek, moduł listy fiszek, nazwa użytkownika oraz opcja wyloguj; dla niezalogowanych – nazwa aplikacji oraz opcja zaloguj.
+Zarządzanie stanem aplikacji realizujemy przy użyciu React hooks i React Context (ewentualnie rozszerzymy o Zustand w przyszłości).
+Inline komunikaty o błędach są wyświetlane bezpośrednio przy danym komponencie.
+Prezentacja fiszek odbywa się we wszystkich widokach w formie siatki, gdzie każdy wiersz zawiera dokładnie trzy fiszki.
+Widok siatki jest ustawiony na sztywno, bez względu na zmianę rozmiaru okna, co odpowiada wymaganiom MVP dla interfejsu desktop.
+</decisions>
+<matched_recommendations>
+Stworzenie wspólnego szablonu dla logowania i rejestracji z minimalnym zestawem pól.
+Implementacja nawigacji w top-bar, która umożliwia natychmiastowe przejście do ekranu generowania fiszek oraz wyświetlenie modułu listy fiszek.
+Zaprojektowanie ekranu generowania fiszek z polem tekstowym (z wyraźnym placeholderem) i przyciskiem "Generuj Fiszki".
+Prezentacja fiszek w formie siatki (trzy fiszki na wiersz) w każdym widoku, z przyciskami "Zatwierdź", "Edytuj", "Odrzuć" oraz operacjami grupowymi umieszczonymi poniżej.
+Utrzymanie spójności interfejsu poprzez wykorzystanie komponentów shadcn/ui (przyciski, pole tekstowe, karty) oraz standardowych breakpointów Tailwind CSS dla interfejsu desktop.
+Zarządzanie stanem aplikacji przy użyciu React hooks i Context, aby utrzymać oddzielny kontekst dla sesji użytkownika i danych fiszek.
+Wyświetlanie inline komunikatów o błędach bezpośrednio przy komponencie, w celu uproszczenia UX.
+</matched_recommendations>
+<ui_architecture_planning_summary>
+Główne wymagania dotyczące architektury UI obejmują:
+Użycie wspólnego layoutu dla logowania i rejestracji z minimalnymi polami (email oraz hasło).
+Implementację top-bar, który w zależności od stanu sesji wyświetla odpowiednie opcje (moduł generowania fiszek, lista fiszek, nazwa użytkownika, wyloguj dla zalogowanych oraz tylko opcję zaloguj dla niezalogowanych).
+Ekran generowania fiszek wyposażony w pole tekstowe (z placeholderem wskazującym wymagania długości tekstu) i przycisk do rozpoczęcia procesu generacji.
+Natychmiastowe wyświetlanie wyników generacji w postaci fiszek prezentowanych jako karty ułożone w sztywną siatkę (trzy fiszki na wiersz) we wszystkich widokach, gdzie są one prezentowane.
+Możliwość wykonania operacji grupowych na fiszkach poprzez przyciski "Zatwierdź wszystkie" i "Odrzuć wszystkie", bez dodatkowych modalnych potwierdzeń.
+Zarządzanie stanem aplikacji przez React hooks i React Context, z wyraźnym rozdzieleniem stanu sesji użytkownika oraz danych fiszek.
+Zastosowanie wyłącznie podstawowych komponentów shadcn/ui oraz standardowych ustawień Tailwind CSS dostosowanych dla interfejsu desktop, co gwarantuje spójność designu i prostotę MVP.
+Integracja z API realizowana na poziomie interfejsu poprzez inline komunikaty o błędach (400, 401, 404, 500), przy czym implementacja JWT i zabezpieczeń zostanie dodana w kolejnej iteracji.
+</ui_architecture_planning_summary>
+<unresolved_issues>
+Szczegóły dotyczące ewentualnych animacji przejścia między widokami nie zostały ustalone (na tym etapie nie są wymagane).
+Pytanie o przyszłą integrację autoryzacji JWT pozostaje otwarte i będzie dopracowane w kolejnych etapach.
+</unresolved_issues>
+</conversation_summary>
+
+
+Jesteś wykwalifikowanym architektem frontend, którego zadaniem jest stworzenie kompleksowej architektury interfejsu użytkownika w oparciu o dokument wymagań produktu (PRD), plan API i notatki z sesji planowania. Twoim celem jest zaprojektowanie struktury interfejsu użytkownika, która skutecznie spełnia wymagania produktu, jest zgodna z możliwościami API i zawiera spostrzeżenia z sesji planowania.
+
+Najpierw dokładnie przejrzyj następujące dokumenty:
+
+Dokument wymagań produktu (PRD):
+<prd>
+@prd.md
+</prd>
+
+Plan API:
+<api_plan>
+@api-plan.md
+</api_plan>
+
+Session Notes:
+<session_notes>
+<conversation_summary>
+<decisions>
+Używamy wspólnego layoutu dla widoków logowania i rejestracji, gdzie jedynymi polami są email (pełniący rolę nazwy użytkownika) oraz hasło.
+Po kliknięciu opcji "Generuj Fiszki" w top-bar użytkownik jest natychmiast przekierowywany do ekranu generowania fiszek.
+Ekran generowania fiszek zawiera pole tekstowe z placeholderem "Wprowadź tekst od długości od 1000 do 10000 znaków" oraz przycisk "Generuj Fiszki".
+Po zakończeniu procesu generowania, karty fiszek pojawiają się natychmiast w widoku.
+Użytkownik ma możliwość wykonania grupowych operacji zatwierdzania ("Zatwierdź wszystkie") i odrzucania ("Odrzuć wszystkie") bez dodatkowych warstw weryfikacji.
+Top-bar wyświetla odpowiednie opcje w zależności od stanu sesji: dla zalogowanych – nazwa aplikacji, moduł generowania fiszek, moduł listy fiszek, nazwa użytkownika oraz opcja wyloguj; dla niezalogowanych – nazwa aplikacji oraz opcja zaloguj.
+Zarządzanie stanem aplikacji realizujemy przy użyciu React hooks i React Context (ewentualnie rozszerzymy o Zustand w przyszłości).
+Inline komunikaty o błędach są wyświetlane bezpośrednio przy danym komponencie.
+Prezentacja fiszek odbywa się we wszystkich widokach w formie siatki, gdzie każdy wiersz zawiera dokładnie trzy fiszki.
+Widok siatki jest ustawiony na sztywno, bez względu na zmianę rozmiaru okna, co odpowiada wymaganiom MVP dla interfejsu desktop.
+</decisions>
+<matched_recommendations>
+Stworzenie wspólnego szablonu dla logowania i rejestracji z minimalnym zestawem pól.
+Implementacja nawigacji w top-bar, która umożliwia natychmiastowe przejście do ekranu generowania fiszek oraz wyświetlenie modułu listy fiszek.
+Zaprojektowanie ekranu generowania fiszek z polem tekstowym (z wyraźnym placeholderem) i przyciskiem "Generuj Fiszki".
+Prezentacja fiszek w formie siatki (trzy fiszki na wiersz) w każdym widoku, z przyciskami "Zatwierdź", "Edytuj", "Odrzuć" oraz operacjami grupowymi umieszczonymi poniżej.
+Utrzymanie spójności interfejsu poprzez wykorzystanie komponentów shadcn/ui (przyciski, pole tekstowe, karty) oraz standardowych breakpointów Tailwind CSS dla interfejsu desktop.
+Zarządzanie stanem aplikacji przy użyciu React hooks i Context, aby utrzymać oddzielny kontekst dla sesji użytkownika i danych fiszek.
+Wyświetlanie inline komunikatów o błędach bezpośrednio przy komponencie, w celu uproszczenia UX.
+</matched_recommendations>
+<ui_architecture_planning_summary>
+Główne wymagania dotyczące architektury UI obejmują:
+Użycie wspólnego layoutu dla logowania i rejestracji z minimalnymi polami (email oraz hasło).
+Implementację top-bar, który w zależności od stanu sesji wyświetla odpowiednie opcje (moduł generowania fiszek, lista fiszek, nazwa użytkownika, wyloguj dla zalogowanych oraz tylko opcję zaloguj dla niezalogowanych).
+Ekran generowania fiszek wyposażony w pole tekstowe (z placeholderem wskazującym wymagania długości tekstu) i przycisk do rozpoczęcia procesu generacji.
+Natychmiastowe wyświetlanie wyników generacji w postaci fiszek prezentowanych jako karty ułożone w sztywną siatkę (trzy fiszki na wiersz) we wszystkich widokach, gdzie są one prezentowane.
+Możliwość wykonania operacji grupowych na fiszkach poprzez przyciski "Zatwierdź wszystkie" i "Odrzuć wszystkie", bez dodatkowych modalnych potwierdzeń.
+Zarządzanie stanem aplikacji przez React hooks i React Context, z wyraźnym rozdzieleniem stanu sesji użytkownika oraz danych fiszek.
+Zastosowanie wyłącznie podstawowych komponentów shadcn/ui oraz standardowych ustawień Tailwind CSS dostosowanych dla interfejsu desktop, co gwarantuje spójność designu i prostotę MVP.
+Integracja z API realizowana na poziomie interfejsu poprzez inline komunikaty o błędach (400, 401, 404, 500), przy czym implementacja JWT i zabezpieczeń zostanie dodana w kolejnej iteracji.
+</ui_architecture_planning_summary>
+<unresolved_issues>
+Szczegóły dotyczące ewentualnych animacji przejścia między widokami nie zostały ustalone (na tym etapie nie są wymagane).
+Pytanie o przyszłą integrację autoryzacji JWT pozostaje otwarte i będzie dopracowane w kolejnych etapach.
+</unresolved_issues>
+</conversation_summary>
+</session_notes>
+
+Twoim zadaniem jest stworzenie szczegółowej architektury interfejsu użytkownika, która obejmuje niezbędne widoki, mapowanie podróży użytkownika, strukturę nawigacji i kluczowe elementy dla każdego widoku. Projekt powinien uwzględniać doświadczenie użytkownika, dostępność i bezpieczeństwo.
+
+Wykonaj następujące kroki, aby ukończyć zadanie:
+
+1. Dokładnie przeanalizuj PRD, plan API i notatki z sesji.
+2. Wyodrębnij i wypisz kluczowe wymagania z PRD.
+3. Zidentyfikuj i wymień główne punkty końcowe API i ich cele.
+4. Utworzenie listy wszystkich niezbędnych widoków na podstawie PRD, planu API i notatek z sesji.
+5. Określenie głównego celu i kluczowych informacji dla każdego widoku.
+6. Zaplanuj podróż użytkownika między widokami, w tym podział krok po kroku dla głównego przypadku użycia.
+7. Zaprojektuj strukturę nawigacji.
+8. Zaproponuj kluczowe elementy interfejsu użytkownika dla każdego widoku, biorąc pod uwagę UX, dostępność i bezpieczeństwo.
+9. Rozważ potencjalne przypadki brzegowe lub stany błędów.
+10. Upewnij się, że architektura interfejsu użytkownika jest zgodna z planem API.
+11. Przejrzenie i zmapowanie wszystkich historyjek użytkownika z PRD do architektury interfejsu użytkownika.
+12. Wyraźne mapowanie wymagań na elementy interfejsu użytkownika.
+13. Rozważ potencjalne punkty bólu użytkownika i sposób, w jaki interfejs użytkownika je rozwiązuje.
+
+Dla każdego głównego kroku pracuj wewnątrz tagów <ui_architecture_planning> w bloku myślenia, aby rozbić proces myślowy przed przejściem do następnego kroku. Ta sekcja może być dość długa. To w porządku, że ta sekcja może być dość długa.
+
+Przedstaw ostateczną architekturę interfejsu użytkownika w następującym formacie Markdown:
+
+```markdown
+# Architektura UI dla [Nazwa produktu]
+
+## 1. Przegląd struktury UI
+
+[Przedstaw ogólny przegląd struktury UI]
+
+## 2. Lista widoków
+
+[Dla każdego widoku podaj:
+- Nazwa widoku
+- Ścieżka widoku
+- Główny cel
+- Kluczowe informacje do wyświetlenia
+- Kluczowe komponenty widoku
+- UX, dostępność i względy bezpieczeństwa]
+
+## 3. Mapa podróży użytkownika
+
+[Opisz przepływ między widokami i kluczowymi interakcjami użytkownika]
+
+## 4. Układ i struktura nawigacji
+
+[Wyjaśnij, w jaki sposób użytkownicy będą poruszać się między widokami]
+
+## 5. Kluczowe komponenty
+
+[Wymień i krótko opisz kluczowe komponenty, które będą używane w wielu widokach].
+```
+
+Skup się wyłącznie na architekturze interfejsu użytkownika, podróży użytkownika, nawigacji i kluczowych elementach dla każdego widoku. Nie uwzględniaj szczegółów implementacji, konkretnego projektu wizualnego ani przykładów kodu, chyba że są one kluczowe dla zrozumienia architektury.
+
+Końcowy rezultat powinien składać się wyłącznie z architektury UI w formacie Markdown w języku polskim, którą zapiszesz w pliku .ai/ui-plan.md. Nie powielaj ani nie powtarzaj żadnej pracy wykonanej w bloku myślenia.
+
+
+
+-------
+Jako starszy programista frontendu Twoim zadaniem jest stworzenie szczegółowego planu wdrożenia nowego widoku w aplikacji internetowej. Plan ten powinien być kompleksowy i wystarczająco jasny dla innego programisty frontendowego, aby mógł poprawnie i wydajnie wdrożyć widok.
+
+Najpierw przejrzyj następujące informacje:
+
+1. Product Requirements Document (PRD):
+<prd>
+@prd.md
+</prd>
+
+2. Opis widoku:
+<view_description>
+@ui-plan.md
+</view_description>
+
+3. User Stories:
+<user_stories>
+### US-002: Generowanie fiszek przez AI
+- Tytuł: Automatyczne generowanie fiszek z tekstu
+- Opis: Użytkownik wkleja tekst edukacyjny, a system generuje fiszki przy użyciu AI. Fiszki zawierają pola "przód" (maks. 220 znaków) i "tył" (maks. 500 znaków) z walidacją limitu znaków.
+- Kryteria akceptacji:
+  - Użytkownik wkleja tekst, a system generuje fiszki.
+  - Pola spełniają ograniczenia dotyczące długości.
+  - W przypadku przekroczenia limitu znaków, wyświetlany jest komunikat z informacją o dopuszczalnej liczbie znaków.
+
+### US-003: Akceptacja/odrzucanie fiszek generowanych przez AI
+- Tytuł: Ocena fiszek generowanych przez AI
+- Opis: Użytkownik przegląda wygenerowane fiszki i ocenia je, klikając przyciski "akceptuj", "edytuj" lub "odrzuć".
+- Kryteria akceptacji:
+  - Użytkownik ma możliwość oceny każdej fiszki poprzez przyciski "akceptuj", "edytuj" i "odrzuć".
+  - Decyzja użytkownika jest zapisywana i wpływa na metryki.
+
+</user_stories>
+
+4. Endpoint Description:
+<endpoint_description>
+### 2.3 AI Generation
+
+- **POST /api/ai/generate**
+  - **Description**: Generate flashcards using AI from submitted text. The input text must be between 1000 and 10000 characters and will be segmented into thematically consistent portions. All generated flashcards will include the `generation_id` linking them to the current AI generation session.
+  - **Request Body (JSON)**:
+    ```json
+    {
+      "text": "string (1000-10000 characters)"
+    }
+    ```
+  - **Response (JSON)**:
+    ```json
+    {
+      "flashcards": [
+        {
+          "id": "uuid",
+          "generation_id": "uuid",  // References the AI generation session
+          "front": "string",
+          "back": "string",
+          "status": "pending",
+          "source": "ai",
+          "created_at": "timestamp",
+          "updated_at": "timestamp"
+        }
+      ],
+      "sessionMetrics": {
+        "generation_duration": "integer",
+        "generated": "integer",
+        "accepted_original": "integer",
+        "accepted_edited": "integer",
+        "rejected": "integer"
+      }
+    }
+    ```
+  - **Success Codes**: 200 OK
+  - **Error Codes**: 400 (invalid input), 401, 500 (AI generation failure)
+
+### 2.4 AI Generation Sessions (Optional / Admin)
+
+- **GET /api/ai/sessions**
+  - **Description**: Retrieve a paginated list of AI generation sessions for the authenticated user (or for administrative use).
+  - **Query Parameters**:
+    - `page`: number
+    - `limit`: number
+  - **Response (JSON)**:
+    ```json
+    {
+      "sessions": [
+        {
+          "id": "uuid",
+          "generation_duration": "integer",
+          "generated": "integer",
+          "accepted_original": "integer",
+          "accepted_edited": "integer",
+          "rejected": "integer",
+          "created_at": "timestamp"
+        }
+      ],
+      "pagination": { "page": 1, "limit": 10, "total": 50 }
+    }
+    ```
+  - **Success Codes**: 200 OK
+  - **Error Codes**: 401, 500
+
+### 2.5 Generation Error Logs (Internal)
+
+- (Optional) **GET /api/ai/errors**
+  - **Description**: Retrieve AI generation error logs for internal or administrative purposes.
+  - **Response (JSON)**: Returns a list of error log entries.
+  - **Access**: Restricted
+  - **Success Codes**: 200 OK
+  - **Error Codes**: 401, 500
+</endpoint_description>
+
+5. Endpoint Implementation:
+<endpoint_implementation>
+{{endpoint-implementation}} <- zamień na referencję do implementacji endpointów, z których będzie korzystał widok (np. @generations.ts, @flashcards.ts)
+</endpoint_implementation>
+
+6. Type Definitions:
+<type_definitions>
+@types.ts
+</type_definitions>
+
+7. Tech Stack:
+<tech_stack>
+@tech-stack.md
+</tech_stack>
+
+Przed utworzeniem ostatecznego planu wdrożenia przeprowadź analizę i planowanie wewnątrz tagów <implementation_breakdown> w swoim bloku myślenia. Ta sekcja może być dość długa, ponieważ ważne jest, aby być dokładnym.
+
+W swoim podziale implementacji wykonaj następujące kroki:
+1. Dla każdej sekcji wejściowej (PRD, User Stories, Endpoint Description, Endpoint Implementation, Type Definitions, Tech Stack):
+  - Podsumuj kluczowe punkty
+ - Wymień wszelkie wymagania lub ograniczenia
+ - Zwróć uwagę na wszelkie potencjalne wyzwania lub ważne kwestie
+2. Wyodrębnienie i wypisanie kluczowych wymagań z PRD
+3. Wypisanie wszystkich potrzebnych głównych komponentów, wraz z krótkim opisem ich opisu, potrzebnych typów, obsługiwanych zdarzeń i warunków walidacji
+4. Stworzenie wysokopoziomowego diagramu drzewa komponentów
+5. Zidentyfikuj wymagane DTO i niestandardowe typy ViewModel dla każdego komponentu widoku. Szczegółowo wyjaśnij te nowe typy, dzieląc ich pola i powiązane typy.
+6. Zidentyfikuj potencjalne zmienne stanu i niestandardowe hooki, wyjaśniając ich cel i sposób ich użycia
+7. Wymień wymagane wywołania API i odpowiadające im akcje frontendowe
+8. Zmapuj każdej historii użytkownika do konkretnych szczegółów implementacji, komponentów lub funkcji
+9. Wymień interakcje użytkownika i ich oczekiwane wyniki
+10. Wymień warunki wymagane przez API i jak je weryfikować na poziomie komponentów
+11. Zidentyfikuj potencjalne scenariusze błędów i zasugeruj, jak sobie z nimi poradzić
+12. Wymień potencjalne wyzwania związane z wdrożeniem tego widoku i zasugeruj możliwe rozwiązania
+
+Po przeprowadzeniu analizy dostarcz plan wdrożenia w formacie Markdown z następującymi sekcjami:
+
+1. Przegląd: Krótkie podsumowanie widoku i jego celu.
+2. Routing widoku: Określenie ścieżki, na której widok powinien być dostępny.
+3. Struktura komponentów: Zarys głównych komponentów i ich hierarchii.
+4. Szczegóły komponentu: Dla każdego komponentu należy opisać:
+ - Opis komponentu, jego przeznaczenie i z czego się składa
+ - Główne elementy HTML i komponenty dzieci, które budują komponent
+ - Obsługiwane zdarzenia
+ - Warunki walidacji (szczegółowe warunki, zgodnie z API)
+ - Typy (DTO i ViewModel) wymagane przez komponent
+ - Propsy, które komponent przyjmuje od rodzica (interfejs komponentu)
+5. Typy: Szczegółowy opis typów wymaganych do implementacji widoku, w tym dokładny podział wszelkich nowych typów lub modeli widoku według pól i typów.
+6. Zarządzanie stanem: Szczegółowy opis sposobu zarządzania stanem w widoku, określenie, czy wymagany jest customowy hook.
+7. Integracja API: Wyjaśnienie sposobu integracji z dostarczonym punktem końcowym. Precyzyjnie wskazuje typy żądania i odpowiedzi.
+8. Interakcje użytkownika: Szczegółowy opis interakcji użytkownika i sposobu ich obsługi.
+9. Warunki i walidacja: Opisz jakie warunki są weryfikowane przez interfejs, których komponentów dotyczą i jak wpływają one na stan interfejsu
+10. Obsługa błędów: Opis sposobu obsługi potencjalnych błędów lub przypadków brzegowych.
+11. Kroki implementacji: Przewodnik krok po kroku dotyczący implementacji widoku.
+
+Upewnij się, że Twój plan jest zgodny z PRD, historyjkami użytkownika i uwzględnia dostarczony stack technologiczny.
+
+Ostateczne wyniki powinny być w języku polskim i zapisane w pliku o nazwie .ai/{view-name}-view-implementation-plan.md. Nie uwzględniaj żadnej analizy i planowania w końcowym wyniku.
+
+Oto przykład tego, jak powinien wyglądać plik wyjściowy (treść jest do zastąpienia):
+
+```markdown
+# Plan implementacji widoku [Nazwa widoku]
+
+## 1. Przegląd
+[Krótki opis widoku i jego celu]
+
+## 2. Routing widoku
+[Ścieżka, na której widok powinien być dostępny]
+
+## 3. Struktura komponentów
+[Zarys głównych komponentów i ich hierarchii]
+
+## 4. Szczegóły komponentów
+### [Nazwa komponentu 1]
+- Opis komponentu [opis]
+- Główne elementy: [opis]
+- Obsługiwane interakcje: [lista]
+- Obsługiwana walidacja: [lista, szczegółowa]
+- Typy: [lista]
+- Propsy: [lista]
+
+### [Nazwa komponentu 2]
+[...]
+
+## 5. Typy
+[Szczegółowy opis wymaganych typów]
+
+## 6. Zarządzanie stanem
+[Opis zarządzania stanem w widoku]
+
+## 7. Integracja API
+[Wyjaśnienie integracji z dostarczonym endpointem, wskazanie typów żądania i odpowiedzi]
+
+## 8. Interakcje użytkownika
+[Szczegółowy opis interakcji użytkownika]
+
+## 9. Warunki i walidacja
+[Szczegółowy opis warunków i ich walidacji]
+
+## 10. Obsługa błędów
+[Opis obsługi potencjalnych błędów]
+
+## 11. Kroki implementacji
+1. [Krok 1]
+2. [Krok 2]
+3. [...]
+```
+
+Rozpocznij analizę i planowanie już teraz. Twój ostateczny wynik powinien składać się wyłącznie z planu wdrożenia w języku polskim w formacie markdown, który zapiszesz w pliku .ai/{view-name}-view-implementation-plan.md i nie powinien powielać ani powtarzać żadnej pracy wykonanej w podziale implementacji.
+
+
+--------implementacja widoku---------
+Twoim zadaniem jest zaimplementowanie widoku frontendu w oparciu o podany plan implementacji i zasady implementacji. Twoim celem jest stworzenie szczegółowej i dokładnej implementacji, która jest zgodna z dostarczonym planem, poprawnie reprezentuje strukturę komponentów, integruje się z API i obsługuje wszystkie określone interakcje użytkownika.
+
+Najpierw przejrzyj plan implementacji:
+
+<implementation_plan>
+@generate-flashcards-view-implementation-plan.md, @
+</implementation_plan>
+
+Teraz przejrzyj zasady implementacji:
+
+<implementation_rules>
+@shared.mdc, @frontend.mdc, @astro.mdc, @react.mdc, @ui-shadcn-helper.mdc, @
+</implementation_rules>
+
+Przejrzyj zdefiniowane typy:
+
+<types>
+@types.ts, @
+</types>
+
+Wdrażaj plan zgodnie z następującym podejściem:
+
+<implementation_approach>
+Realizuj maksymalnie 3 kroki planu implementacji, podsumuj krótko co zrobiłeś i opisz plan na 3 kolejne działania - zatrzymaj w tym momencie pracę i czekaj na mój feedback.
+</implementation_approach>
+
+Dokładnie przeanalizuj plan wdrożenia i zasady. Zwróć szczególną uwagę na strukturę komponentów, wymagania dotyczące integracji API i interakcje użytkownika opisane w planie.
+
+Wykonaj następujące kroki, aby zaimplementować widok frontendu:
+
+1. Struktura komponentów:
+   - Zidentyfikuj wszystkie komponenty wymienione w planie wdrożenia.
+   - Utwórz hierarchiczną strukturę tych komponentów.
+   - Upewnij się, że obowiązki i relacje każdego komponentu są jasno zdefiniowane.
+
+2. Integracja API:
+   - Zidentyfikuj wszystkie endpointy API wymienione w planie.
+   - Wdróż niezbędne wywołania API dla każdego endpointa.
+   - Obsłuż odpowiedzi z API i odpowiednio aktualizacji stan komponentów.
+
+3. Interakcje użytkownika:
+   - Wylistuj wszystkie interakcje użytkownika określone w planie wdrożenia.
+   - Wdróż obsługi zdarzeń dla każdej interakcji.
+   - Upewnij się, że każda interakcja wyzwala odpowiednią akcję lub zmianę stanu.
+
+4. Zarządzanie stanem:
+   - Zidentyfikuj wymagany stan dla każdego komponentu.
+   - Zaimplementuj zarządzanie stanem przy użyciu odpowiedniej metody (stan lokalny, custom hook, stan współdzielony).
+   - Upewnij się, że zmiany stanu wyzwalają niezbędne ponowne renderowanie.
+
+5. Stylowanie i layout:
+   - Zastosuj określone stylowanie i layout, jak wspomniano w planie wdrożenia.
+   - Zapewnienie responsywności, jeśli wymaga tego plan.
+
+6. Obsługa błędów i przypadki brzegowe:
+   - Wdrożenie obsługi błędów dla wywołań API i interakcji użytkownika.
+   - Rozważ i obsłuż potencjalne edge case'y wymienione w planie.
+
+7. Optymalizacja wydajności:
+   - Wdrożenie wszelkich optymalizacji wydajności określonych w planie lub zasadach.
+   - Zapewnienie wydajnego renderowania i minimalnej liczby niepotrzebnych ponownych renderowań.
+
+8. Testowanie:
+   - Jeśli zostało to określone w planie, zaimplementuj testy jednostkowe dla komponentów i funkcji.
+   - Dokładnie przetestuj wszystkie interakcje użytkownika i integracje API.
+
+W trakcie całego procesu implementacji należy ściśle przestrzegać dostarczonych zasad implementacji. Zasady te mają pierwszeństwo przed wszelkimi ogólnymi najlepszymi praktykami, które mogą być z nimi sprzeczne.
+
+Upewnij się, że twoja implementacja dokładnie odzwierciedla dostarczony plan implementacji i przestrzega wszystkich określonych zasad. Zwróć szczególną uwagę na strukturę komponentów, integrację API i obsługę interakcji użytkownika.
+
+
+--- integracja auth z backendem
+Environment Configuration:
+Have you already set up the Supabase project and do you have the SUPABASE_URL and SUPABASE_KEY environment variables configured?
+This is crucial as per the supabase-auth.md guidelines for proper initialization.
+Session Management Preference:
+Do you want to use server-side session management with cookies (recommended by Supabase SSR docs) or would you prefer client-side token storage?
+This affects how we'll implement the middleware and handle authentication state.
+Protected Routes Structure:
+Could you confirm which routes should be public vs protected in your application?
+From the PRD I see login/register are public, but I need to confirm if there are other public routes to properly configure the middleware.
+Error Handling Strategy:
+How would you like to handle and display authentication errors?
+Should we use toast notifications, inline form errors, or both?
+This impacts both the UI components and API endpoint implementation.
+Post-Authentication Flow:
+What should be the redirect path after successful login?
+The PRD mentions several protected features (like flashcards), but we need to know the primary landing page for authenticated users.
+
+1. I Have already set up the Supabase project and i have the SUPABASE_URL and SUPABASE_KEY environment variables configured
+2. i you prefer client-side token storage
+3. login/register/reset-password are public
+4. authentication errors should be displayed inline
+5. after succesful login redirect to /generate
+
+
+------------flashcards implementation-plan
+Jesteś doświadczonym architektem oprogramowania, którego zadaniem jest stworzenie szczegółowego planu wdrożenia punktu końcowego REST API. Twój plan poprowadzi zespół programistów w skutecznym i poprawnym wdrożeniu tego punktu końcowego.
+
+Zanim zaczniemy, zapoznaj się z poniższymi informacjami:
+
+1. Route API specification:
+<route_api_specification>
+### 2.2 Flashcards
+
+- **GET /api/flashcards**
+  - **Description**: Retrieve a paginated list of flashcards for the authenticated user. Supports filtering by status and sorting.
+  - **Query Parameters** (optional):
+    - `page`: number (default 1)
+    - `limit`: number (default 10)
+    - `status`: string (e.g., pending, accepted-original, accepted-edited, rejected)
+    - `sortBy`: field name (e.g., created_at)
+    - `order`: asc or desc
+  - **Response (JSON)**:
+    ```json
+    {
+      "flashcards": [
+        {
+          "id": "uuid",
+          "generation_id": "uuid",  // References the associated AI generation session, if any
+          "front": "string",
+          "back": "string",
+          "status": "string",
+          "source": "string",
+          "created_at": "timestamp",
+          "updated_at": "timestamp"
+        }
+      ],
+      "pagination": { "page": 1, "limit": 10, "total": 100 }
+    }
+    ```
+  - **Success Codes**: 200 OK
+  - **Error Codes**: 401 (unauthorized), 500 (server error)
+
+- **GET /api/flashcards/:id**
+  - **Description**: Retrieve details of a single flashcard.
+  - **Response (JSON)**: Returns the flashcard object including the `generation_id` field.
+  - **Success Codes**: 200 OK
+  - **Error Codes**: 401, 404 (not found)
+
+- **POST /api/flashcards**
+  - **Description**: Create a new flashcard manually.
+  - **Request Body (JSON)**:
+    ```json
+    {
+      "front": "string (max 220 characters)",
+      "back": "string (max 500 characters)",
+      "generation_id": "uuid or null"  // Optional: set if the flashcard is linked to an AI generation session; otherwise, null for manual creation.
+    }
+    ```
+  - **Response (JSON)**: Returns the created flashcard object including its `generation_id`.
+  - **Success Codes**: 201 Created
+  - **Error Codes**: 400 (validation error), 401 (unauthorized)
+
+- **PUT /api/flashcards/:id**
+  - **Description**: Update an existing flashcard (manual edit). Only the `front` and `back` fields are allowed, while the `generation_id` remains unchanged.
+  - **Request Body (JSON)**:
+    ```json
+    {
+      "front": "string (max 220 characters)",
+      "back": "string (max 500 characters)"
+    }
+    ```
+  - **Response (JSON)**: Returns the updated flashcard object including the existing `generation_id`.
+  - **Success Codes**: 200 OK
+  - **Error Codes**: 400 (validation error), 401, 404 (not found)
+
+- **DELETE /api/flashcards/:id**
+  - **Description**: Delete a flashcard.
+  - **Response (JSON)**:
+    ```json
+    { "message": "Flashcard deleted successfully." }
+    ```
+  - **Success Codes**: 200 OK
+  - **Error Codes**: 401, 404
+
+- **PATCH /api/flashcards/:id/status**
+  - **Description**: Update the status of a flashcard (e.g., to accept or reject an AI-generated flashcard).
+  - **Request Body (JSON)**:
+    ```json
+    {
+      "action": "accept" | "reject"
+    }
+    ```
+  - **Response (JSON)**: Returns the flashcard object with its updated status while preserving the `generation_id`.
+  - **Success Codes**: 200 OK
+  - **Error Codes**: 400 (invalid action), 401, 404
+  ### 4.1 Validation
+
+- **Flashcards**:
+  - `front`: Maximum 220 characters.
+  - `back`: Maximum 500 characters.
+  - The `generation_id` field must either be a valid UUID referencing an existing AI generation session or null.
+  - Exceeding the text limits results in a 400 error with a message indicating the allowed character count.
+### 4.2 Business Logic
+2. **Flashcards Management**:
+   - Manual creation and editing endpoints enforce validation on text lengths.
+   - Dedicated endpoint (`PATCH /api/flashcards/:id/status`) handles accept and reject actions, updating the flashcard's status as follows:
+     - **Accept**: May set status to either `accepted-original` or `accepted-edited` based on whether the flashcard is newly generated or edited.
+     - **Reject**: Sets status to `rejected`.
+   - List retrieval endpoints include pagination, filtering by status, and sorting to manage large datasets.
+</route_api_specification>
+
+2. Related database resources:
+<related_db_resources>
+db-plan.md
+</related_db_resources>
+
+3. Definicje typów:
+<type_definitions>
+@types
+</type_definitions>
+
+3. Tech stack:
+<tech_stack>
+@tech-stack.md 
+</tech_stack>
+
+4. Implementation rules:
+<implementation_rules>
+@shared.mdc, @backend.mdc, @astro.mdc
+</implementation_rules>
+
+Twoim zadaniem jest stworzenie kompleksowego planu wdrożenia endpointu interfejsu API REST. Przed dostarczeniem ostatecznego planu użyj znaczników <analysis>, aby przeanalizować informacje i nakreślić swoje podejście. W tej analizie upewnij się, że:
+
+1. Podsumuj kluczowe punkty specyfikacji API.
+2. Wymień wymagane i opcjonalne parametry ze specyfikacji API.
+3. Wymień niezbędne typy DTO i Command Modele.
+4. Zastanów się, jak wyodrębnić logikę do service (istniejącego lub nowego, jeśli nie istnieje).
+5. Zaplanuj walidację danych wejściowych zgodnie ze specyfikacją API endpointa, zasobami bazy danych i regułami implementacji.
+6. Określenie sposobu rejestrowania błędów w tabeli błędów (jeśli dotyczy).
+7. Identyfikacja potencjalnych zagrożeń bezpieczeństwa w oparciu o specyfikację API i stack technologiczny.
+8. Nakreśl potencjalne scenariusze błędów i odpowiadające im kody stanu.
+
+Po przeprowadzeniu analizy utwórz szczegółowy plan wdrożenia w formacie markdown. Plan powinien zawierać następujące sekcje:
+
+1. Przegląd punktu końcowego
+2. Szczegóły żądania
+3. Szczegóły odpowiedzi
+4. Przepływ danych
+5. Względy bezpieczeństwa
+6. Obsługa błędów
+7. Wydajność
+8. Kroki implementacji
+
+W całym planie upewnij się, że
+- Używać prawidłowych kodów stanu API:
+  - 200 dla pomyślnego odczytu
+  - 201 dla pomyślnego utworzenia
+  - 400 dla nieprawidłowych danych wejściowych
+  - 401 dla nieautoryzowanego dostępu
+  - 404 dla nie znalezionych zasobów
+  - 500 dla błędów po stronie serwera
+- Dostosowanie do dostarczonego stacku technologicznego
+- Postępuj zgodnie z podanymi zasadami implementacji
+
+Końcowym wynikiem powinien być dobrze zorganizowany plan wdrożenia w formacie markdown. Oto przykład tego, jak powinny wyglądać dane wyjściowe:
+
+``markdown
+# API Endpoint Implementation Plan: [Nazwa punktu końcowego]
+
+## 1. Przegląd punktu końcowego
+[Krótki opis celu i funkcjonalności punktu końcowego]
+
+## 2. Szczegóły żądania
+- Metoda HTTP: [GET/POST/PUT/DELETE]
+- Struktura URL: [wzorzec URL]
+- Parametry:
+  - Wymagane: [Lista wymaganych parametrów]
+  - Opcjonalne: [Lista opcjonalnych parametrów]
+- Request Body: [Struktura treści żądania, jeśli dotyczy]
+
+## 3. Wykorzystywane typy
+[DTOs i Command Modele niezbędne do implementacji]
+
+## 3. Szczegóły odpowiedzi
+[Oczekiwana struktura odpowiedzi i kody statusu]
+
+## 4. Przepływ danych
+[Opis przepływu danych, w tym interakcji z zewnętrznymi usługami lub bazami danych]
+
+## 5. Względy bezpieczeństwa
+[Szczegóły uwierzytelniania, autoryzacji i walidacji danych]
+
+## 6. Obsługa błędów
+[Lista potencjalnych błędów i sposób ich obsługi]
+
+## 7. Rozważania dotyczące wydajności
+[Potencjalne wąskie gardła i strategie optymalizacji]
+
+## 8. Etapy wdrożenia
+1. [Krok 1]
+2. [Krok 2]
+3. [Krok 3]
+...
+```
+
+Końcowe wyniki powinny składać się wyłącznie z planu wdrożenia w formacie markdown i nie powinny powielać ani powtarzać żadnej pracy wykonanej w sekcji analizy.
+
+Pamiętaj, aby zapisać swój plan wdrożenia jako .ai/fc-view-implementation-plan.md. Upewnij się, że plan jest szczegółowy, przejrzysty i zapewnia kompleksowe wskazówki dla zespołu programistów.
+
+
+---------implementacja backend flashcardsTwoim zadaniem jest wdrożenie endpointa interfejsu API REST w oparciu o podany plan wdrożenia. Twoim celem jest stworzenie solidnej i dobrze zorganizowanej implementacji, która zawiera odpowiednią walidację, obsługę błędów i podąża za wszystkimi logicznymi krokami opisanymi w planie.
+
+Najpierw dokładnie przejrzyj dostarczony plan wdrożenia:
+
+<implementation_plan>
+@fc-view-implementation-plan.md
+</implementation_plan>
+
+<types>
+@types
+</types>
+
+<implementation_rules>
+@shared.mdc, @backend.mdc, @astro.mdc
+</implementation_rules>
+
+<implementation_approach>
+Realizuj maksymalnie 3 kroki planu implementacji, podsumuj krótko co zrobiłeś i opisz plan na 3 kolejne działania - zatrzymaj w tym momencie pracę i czekaj na mój feedback.
+</implementation_approach>
+
+Teraz wykonaj następujące kroki, aby zaimplementować punkt końcowy interfejsu API REST:
+
+1. Przeanalizuj plan wdrożenia:
+   - Określ metodę HTTP (GET, POST, PUT, DELETE itp.) dla punktu końcowego.
+   - Określenie struktury adresu URL punktu końcowego
+   - Lista wszystkich oczekiwanych parametrów wejściowych
+   - Zrozumienie wymaganej logiki biznesowej i etapów przetwarzania danych
+   - Zwróć uwagę na wszelkie szczególne wymagania dotyczące walidacji lub obsługi błędów.
+
+2. Rozpocznij implementację:
+   - Rozpocznij od zdefiniowania funkcji punktu końcowego z prawidłowym dekoratorem metody HTTP.
+   - Skonfiguruj parametry funkcji w oparciu o oczekiwane dane wejściowe
+   - Wdrożenie walidacji danych wejściowych dla wszystkich parametrów
+   - Postępuj zgodnie z logicznymi krokami opisanymi w planie wdrożenia
+   - Wdrożenie obsługi błędów dla każdego etapu procesu
+   - Zapewnienie właściwego przetwarzania i transformacji danych zgodnie z wymaganiami
+   - Przygotowanie struktury danych odpowiedzi
+
+3. Walidacja i obsługa błędów:
+   - Wdrożenie dokładnej walidacji danych wejściowych dla wszystkich parametrów
+   - Używanie odpowiednich kodów statusu HTTP dla różnych scenariuszy (np. 400 dla błędnych żądań, 404 dla nie znaleziono, 500 dla błędów serwera).
+   - Dostarczanie jasnych i informacyjnych komunikatów o błędach w odpowiedzi.
+   - Obsługa potencjalnych wyjątków, które mogą wystąpić podczas przetwarzania.
+
+4. Rozważania dotyczące testowania:
+   - Należy rozważyć edge case'y i potencjalne problemy, które powinny zostać przetestowane.
+   - Upewnienie się, że wdrożenie obejmuje wszystkie scenariusze wymienione w planie.
+
+5. Dokumentacja:
+   - Dodaj jasne komentarze, aby wyjaśnić złożoną logikę lub ważne decyzje
+   - Dołącz dokumentację dla głównej funkcji i wszelkich funkcji pomocniczych.
+
+Po zakończeniu implementacji upewnij się, że zawiera wszystkie niezbędne importy, definicje funkcji i wszelkie dodatkowe funkcje pomocnicze lub klasy wymagane do implementacji.
+
+Jeśli musisz przyjąć jakieś założenia lub masz jakiekolwiek pytania dotyczące planu implementacji, przedstaw je przed pisaniem kodu.
+
+Pamiętaj, aby przestrzegać najlepszych praktyk projektowania REST API, stosować się do wytycznych dotyczących stylu języka programowania i upewnić się, że kod jest czysty, czytelny i dobrze zorganizowany.
