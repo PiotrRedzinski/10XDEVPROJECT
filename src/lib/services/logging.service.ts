@@ -102,4 +102,20 @@ export class LoggingService {
         console.info(message);
     }
   }
+
+  /**
+   * Logs flashcard operation errors
+   * @param error The error object
+   * @param operation The operation being performed (e.g., "create", "update", "delete")
+   * @param userId The ID of the user performing the operation
+   * @param flashcardId The ID of the flashcard (if applicable)
+   */
+  logFlashcardError(error: Error, operation: string, userId: string, flashcardId?: string): void {
+    console.error(
+      `[Flashcard ${operation} Error] User: ${userId}, Flashcard: ${flashcardId || "N/A"} - ${error.message}`
+    );
+
+    // Additional logic for storing errors in the database can be added here
+    // For example, inserting into generation_error_log table if it's related to AI operations
+  }
 }
