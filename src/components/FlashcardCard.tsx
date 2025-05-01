@@ -15,6 +15,19 @@ export default function FlashcardCard({ flashcard, onEditClick, onDeleteClick }:
     return text.substring(0, maxLength) + "...";
   };
 
+  // Bezpieczne handlery, które sprawdzają czy funkcje zwrotne istnieją
+  const handleEditClick = () => {
+    if (typeof onEditClick === "function") {
+      onEditClick(flashcard.id);
+    }
+  };
+
+  const handleDeleteClick = () => {
+    if (typeof onDeleteClick === "function") {
+      onDeleteClick(flashcard.id);
+    }
+  };
+
   return (
     <Card className="h-full flex flex-col overflow-hidden hover:shadow-md transition-shadow duration-200">
       <CardHeader className="bg-gray-50 border-b pb-3">
@@ -34,14 +47,14 @@ export default function FlashcardCard({ flashcard, onEditClick, onDeleteClick }:
       <CardFooter className="border-t pt-4 flex justify-between bg-gray-50">
         <Button
           variant="outline"
-          onClick={() => onEditClick(flashcard.id)}
+          onClick={handleEditClick}
           className="text-airbnb-babu border-airbnb-babu hover:bg-airbnb-babu hover:text-white"
         >
           Edit
         </Button>
         <Button
           variant="outline"
-          onClick={() => onDeleteClick(flashcard.id)}
+          onClick={handleDeleteClick}
           className="text-airbnb-rausch border-airbnb-rausch hover:bg-airbnb-rausch hover:text-white"
         >
           Delete

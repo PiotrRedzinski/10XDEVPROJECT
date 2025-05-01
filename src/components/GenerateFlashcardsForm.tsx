@@ -465,6 +465,7 @@ export default function GenerateFlashcardsForm() {
             value={state.text}
             onChange={handleTextChange}
             placeholder="Paste or type your text here..."
+            data-testid="flashcard-text-input"
             className="w-full min-h-[250px] border-2 rounded-xl resize-none shadow-sm placeholder:text-gray-400 p-4 focus:border-airbnb-babu focus:ring-airbnb-babu"
             disabled={state.isLoading}
           />
@@ -486,6 +487,7 @@ export default function GenerateFlashcardsForm() {
         <button
           type="submit"
           disabled={!!state.error || state.isLoading || state.characterCount < MIN_CHARS}
+          data-testid="generate-flashcards-button"
           className="w-full bg-airbnb-rausch text-white font-medium py-4 px-6 rounded-xl shadow-sm hover:bg-[#FF385C] transition-colors duration-300 disabled:bg-gray-300 disabled:text-gray-500"
         >
           {state.isLoading ? (
@@ -512,12 +514,14 @@ export default function GenerateFlashcardsForm() {
             <div className="space-x-4">
               <button
                 onClick={handleAcceptAll}
+                data-testid="accept-all-flashcards-button"
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
                 Accept All
               </button>
               <button
                 onClick={handleRejectAll}
+                data-testid="reject-all-flashcards-button"
                 className="px-4 py-2 bg-airbnb-rausch text-white rounded-lg hover:bg-[#FF385C] transition-colors"
               >
                 Reject All
@@ -525,20 +529,29 @@ export default function GenerateFlashcardsForm() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="flashcards-grid">
             {state.generatedFlashcards.map((card, index) => (
-              <div key={index} className="bg-white rounded-xl shadow-md border p-6 space-y-4">
+              <div
+                key={index}
+                data-testid={`flashcard-${card.id}`}
+                className="bg-white rounded-xl shadow-md border p-6 space-y-4"
+              >
                 <div className="space-y-2">
                   <h4 className="font-medium text-airbnb-hof">Front</h4>
-                  <p className="text-airbnb-foggy">{card.front}</p>
+                  <p className="text-airbnb-foggy" data-testid={`flashcard-front-${card.id}`}>
+                    {card.front}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <h4 className="font-medium text-airbnb-hof">Back</h4>
-                  <p className="text-airbnb-foggy">{card.back}</p>
+                  <p className="text-airbnb-foggy" data-testid={`flashcard-back-${card.id}`}>
+                    {card.back}
+                  </p>
                 </div>
                 <div className="flex justify-end space-x-2 pt-4">
                   <button
                     onClick={() => handleCardAction("accept", card)}
+                    data-testid={`accept-flashcard-${card.id}`}
                     className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
                     title="Accept"
                   >
@@ -546,6 +559,7 @@ export default function GenerateFlashcardsForm() {
                   </button>
                   <button
                     onClick={() => handleCardAction("edit", card)}
+                    data-testid={`edit-flashcard-${card.id}`}
                     className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
                     title="Edit"
                   >
@@ -553,6 +567,7 @@ export default function GenerateFlashcardsForm() {
                   </button>
                   <button
                     onClick={() => handleCardAction("reject", card)}
+                    data-testid={`reject-flashcard-${card.id}`}
                     className="p-2 text-airbnb-rausch hover:bg-red-50 rounded-full transition-colors"
                     title="Reject"
                   >

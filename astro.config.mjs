@@ -17,4 +17,11 @@ export default defineConfig({
   session: {
     driver: "node",
   },
+  vite: {
+    build: {
+      rollupOptions: {
+        external: ["node"],
+      },
+    },
+  },
 });
