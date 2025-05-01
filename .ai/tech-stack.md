@@ -5,10 +5,13 @@ Poniżej znajduje się krytyczna, ale rzeczowa analiza przedstawionego tech-stac
      Astro umożliwia renderowanie statyczne z opcjonalną interaktywnością – to bardzo korzystne przy tworzeniu MVP, gdzie zależy nam na szybkiej i responsywnej stronie. Wykorzystanie popularnych narzędzi, takich jak React i TypeScript, dodatkowo pozwala na łatwe skalowanie aplikacji oraz dostęp do rozbudowanych narzędzi deweloperskich. Tailwind i Shadcn/ui skracają czas na projektowanie oraz implementację UI, dzięki czemu możesz szybko osiągnąć pożądany wygląd i funkcjonalność.
      
    - **Backend (Supabase):**  
-     Supabase oferuje gotową bazę danych PostgreSQL, mechanizmy autentykacji oraz SDK, co znacząco przyspiesza wdrożenie backendu – jest to idealne rozwiązanie dla MVP, które pozwala uniknąć konieczności budowania „od zera” całej logiki backendowej.
+     Supabase oferuje gotową bazę danych PostgreSQL, mechanizmy autentykacji oraz SDK, co znacząco przyspiesza wdrożenie backendu – jest to idealne rozwiązanie dla MVP, które pozwala uniknąć konieczności budowania „od zera" całej logiki backendowej.
      
    - **Integracja AI (Openrouter.ai):**  
      Użycie jednej z usług AI pozwala na eksperymentowanie z różnymi modelami bez konieczności integracji kilku oddzielnych API, co również przyspiesza rozwój MVP.
+
+   - **Testy (Jest/Vitest + Playwright):**  
+     Wykorzystanie popularnych i dobrze udokumentowanych narzędzi testowych umożliwia szybkie wdrożenie zarówno testów jednostkowych (Jest/Vitest), jak i end-to-end (Playwright). Dzięki temu można efektywnie zapewnić jakość aplikacji już na etapie MVP, co pozwala na szybsze i bezpieczniejsze iteracje funkcjonalności.
      
    **Wniosek:** Tech-stack pozwala na szybkie wdrożenie MVP dzięki wykorzystaniu narzędzi typu BaaS i sprawdzonych frameworków.
 
@@ -20,7 +23,10 @@ Poniżej znajduje się krytyczna, ale rzeczowa analiza przedstawionego tech-stac
      Supabase opiera się na PostgreSQL, który jest skalowalny, aczkolwiek wzrost ruchu i złożoność operacji mogą wymagać przejścia na bardziej rozbudowaną infrastrukturę (np. replikacja, optymalizacja zapytań).  
      
    - **CI/CD i hosting:**  
-     Github Actions i DigitalOcean zapewniają solidny fundament dla skalowania – możliwość wdrażania pipeline’ów CI/CD umożliwi automatyczne testowanie i wdrażanie, a elastyczność DigitalOcean (np. poprzez skalowanie klastrów lub dodawanie zasobów) pozwoli na obsługę rosnącego obciążenia.
+     Github Actions i DigitalOcean zapewniają solidny fundament dla skalowania – możliwość wdrażania pipeline'ów CI/CD umożliwi automatyczne testowanie i wdrażanie, a elastyczność DigitalOcean (np. poprzez skalowanie klastrów lub dodawanie zasobów) pozwoli na obsługę rosnącego obciążenia.
+
+   - **Testy:**  
+     Zestaw narzędzi testowych (Jest/Vitest dla testów jednostkowych, Playwright dla testów E2E) umożliwia skalowanie testów wraz z rozwojem aplikacji. Automatyzacja testów w pipeline'ach CI/CD pozwala na utrzymanie jakości kodu przy rosnącej złożoności projektu i zespołu.
      
    **Wniosek:** Rozwiązanie jest wystarczająco skalowalne dla średniej wielkości projektów; przy bardzo dużej skali konieczne mogą być optymalizacje, ale na początek stack spełnia wymagania.
 
@@ -36,18 +42,23 @@ Poniżej znajduje się krytyczna, ale rzeczowa analiza przedstawionego tech-stac
      
    - **CI/CD i hosting:**  
      Oba te elementy są na tyle elastyczne, że możesz zacząć od mniejszych zasobów, a następnie skalować w miarę potrzeb, co pomaga zarządzać kosztami.
+
+   - **Testy:**  
+     Wybrane narzędzia testowe (Jest/Vitest, Playwright) są open source, co minimalizuje koszty licencyjne. Inwestycja w automatyzację testów zwiększa początkowe koszty rozwoju, ale długoterminowo obniża koszty utrzymania poprzez wczesne wykrywanie błędów i zapewnienie stabilności aplikacji.
      
    **Wniosek:** Na początkowym etapie koszty utrzymania i rozwoju są akceptowalne, ale warto mieć świadomość, że wraz ze wzrostem projektu może być konieczne zoptymalizowanie kosztów, szczególnie w sekcji AI i bazy danych.
 
 4. **Złożoność rozwiązania**  
    - Tech-stack łączy kilka zaawansowanych technologii, co pozwala na budowę wydajnego i nowoczesnego rozwiązania.  
    - Na etapie MVP niektóre z tych technologii mogą wydawać się przesadzone (np. integracja dedykowanej usługi AI) – jednak każdy element ma uzasadnienie, jeśli planujesz rozwój projektu w kierunku bardziej złożonych funkcjonalności i skalowalności.
+   - Kompleksowe podejście do testów (jednostkowe, integracyjne, E2E) może wydawać się złożone na początku, ale zapewnia solidne fundamenty dla rozwoju aplikacji i pozwala na szybkie iteracje bez ryzyka regresji.
      
    **Wniosek:** Choć rozwiązanie może wydawać się złożone, poszczególne warstwy umożliwiają elastyczny rozwój produktu i szybkie wdrażanie nowych funkcji. Warto jednak zastanowić się, czy wszystkie elementy są konieczne na początkowym etapie, czy można uprościć architekturę na MVP.
 
 5. **Istnienie prostszych rozwiązań**  
    - Alternatywnie, można rozważyć użycie bardziej monolitycznych frameworków, takich jak Next.js czy Remix, które mogą zintegrować frontend i backend w jednym środowisku.  
    - Jeśli MVP nie wymaga intensywnej interaktywności czy skomplikowanej logiki backendowej, uproszczone rozwiązania oparte na serwerless lub nawet platformach no-code mogą wystarczyć.
+   - W przypadku testów, dla mniejszych projektów można rozważyć prostsze podejście, koncentrując się początkowo tylko na manualnych testach lub ograniczonym zestawie testów automatycznych.
      
    **Wniosek:** Wybrane technologie dają dużą elastyczność i są przyszłościowe, ale warto rozważyć uproszczenia, jeśli celem jest szybkie przetestowanie rynku bez pełnej integracji wszystkich elementów.
 
@@ -63,6 +74,9 @@ Poniżej znajduje się krytyczna, ale rzeczowa analiza przedstawionego tech-stac
      
    - **CI/CD i Hosting:**  
      Standardowe praktyki w Github Actions i konfiguracja środowisk w DigitalOcean (np. firewall, monitoring) pozwalają na zapewnienie dodatkowych warstw ochronnych.
+
+   - **Testy:**  
+     Kompleksowe testy zwiększają bezpieczeństwo aplikacji poprzez weryfikację poprawności autentykacji, autoryzacji i walidacji danych. Testy automatyczne pozwalają na szybkie wykrywanie potencjalnych luk bezpieczeństwa wprowadzonych podczas rozwoju.
      
    **Wniosek:** Technologie są wystarczająco bezpieczne, przy założeniu że wdrożysz dobre praktyki bezpieczeństwa, regularne aktualizacje, a także konfigurację systemu (dostęp, firewall, monitoring) opartą o standardy branżowe.
 
@@ -76,5 +90,6 @@ Tech-stack w dużej mierze odpowiada potrzebom @prd.md:
 - Koszty przy starcie są akceptowalne, jednak przy wzroście projektu trzeba monitorować wydatki, szczególnie związane z integracją AI.
 - Chociaż stack wydaje się złożony, poszczególne technologie umożliwiają budowę solidnej, nowoczesnej aplikacji – warto jednak rozważyć, czy wszystkie z nich są niezbędne na początkowym etapie.
 - Elementy związane z bezpieczeństwem są dobrze obsługiwane przez wybrane rozwiązania, pod warunkiem stosowania najlepszych praktyk.
+- Narzędzia testowe (Jest/Vitest dla testów jednostkowych, Playwright dla testów E2E) zapewniają dobrą jakość aplikacji już od etapu MVP i umożliwiają bezpieczny rozwój w przyszłości.
 
 Ogólnie rzecz biorąc, proponowany tech-stack jest odpowiedni, ale warto przemyśleć kwestie uproszczenia architektury, jeżeli celem jest szybkie przetestowanie koncepcji rynkowej czy MVP.

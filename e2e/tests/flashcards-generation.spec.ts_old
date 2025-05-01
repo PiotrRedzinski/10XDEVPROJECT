@@ -1,0 +1,82 @@
+import { test, expect } from "@playwright/test";
+import { FlashcardsGeneratorPage } from "../page-objects/FlashcardsGeneratorPage";
+import { LoginPage } from "../page-objects/LoginPage";
+
+test.describe("Flashcards Generation", () => {
+  let generatorPage: FlashcardsGeneratorPage;
+
+  test.beforeEach(async ({ page }) => {
+    const loginPage = new LoginPage(page);
+    generatorPage = new FlashcardsGeneratorPage(page);
+
+    // Go to login page
+    await page.goto("/login");
+
+    // Fill form
+    await page.locator('input[type="email"]').fill(process.env.TEST_USER_EMAIL || "test@example.com");
+    await page.locator('input[type="password"]').fill(process.env.TEST_USER_PASSWORD || "test1111");
+
+    // Get sign in button
+    const signInButton = page.getByRole("button", { name: "Sign in" });
+
+    // Verify button is visible and enabled
+    await expect(signInButton).toBeVisible();
+    await expect(signInButton).toBeEnabled();
+
+    // Click and wait for auth response
+    const [response] = await Promise.all([
+      page.waitForResponse(
+        (response) => {
+          return response.url().includes("/auth") && response.status() === 200;
+        },
+        { timeout: 5000 }
+      ),
+      signInButton.click(),
+    ]);
+
+    // Verify auth response
+    expect(response.status()).toBe(200);
+  });
+
+  test("should generate and manage flashcards", async ({ page }) => {
+    // Navigate to generate page
+    await page.goto("/generate");
+
+    // Verify page title
+    await expect(page).toHaveTitle(/Authentication - 10xDev/);
+
+    // Arrange
+    const sampleText = "This is a sample text that is long enough to generate flashcards...";
+
+    // Act - Generate flashcards
+    await generatorPage.enterText(sampleText);
+    await generatorPage.generateFlashcards();
+
+    // Assert - Flashcards were generated
+    await generatorPage.expectFlashcardsGenerated();
+
+    // Act - Accept first two flashcards
+    const firstCard = await generatorPage.getFlashcard("1");
+    const secondCard = await generatorPage.getFlashcard("2");
+
+    await firstCard.expectToBeVisible();
+    await secondCard.expectToBeVisible();
+
+    await firstCard.accept();
+    await secondCard.accept();
+
+    // Assert - Cards were removed after acceptance
+    await expect(async () => {
+      await firstCard.expectToBeVisible();
+    }).rejects.toThrow();
+    await expect(async () => {
+      await secondCard.expectToBeVisible();
+    }).rejects.toThrow();
+
+    // Act - Reject remaining cards
+    await generatorPage.rejectAllFlashcards();
+
+    // Assert - No flashcards remain
+    await generatorPage.expectNoFlashcards();
+  });
+});

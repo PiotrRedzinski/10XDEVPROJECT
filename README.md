@@ -9,6 +9,9 @@ GenFish is a web-based educational flashcards platform designed to streamline th
 - **Frontend:** Astro, React, TypeScript, Tailwind, Shadcn/ui
 - **Backend:** Supabase (PostgreSQL, authentication, and SDK support)
 - **AI Integration:** Openrouter.ai
+- **Testing:** 
+  - **Unit Testing:** Jest/Vitest for component and service testing
+  - **End-to-End Testing:** Playwright for automated browser testing
 - **Other Tools:** ESLint, Prettier, and various development dependencies as specified in the project configuration
 
 ## Getting Started Locally
@@ -43,6 +46,16 @@ The following scripts are available in the project:
 - `npm run lint` - Runs ESLint to check for code quality issues.
 - `npm run lint:fix` - Automatically fixes linting issues.
 - `npm run format` - Formats the code using Prettier.
+- `npm run test` - Runs unit tests with Jest/Vitest.
+- `npm run test:e2e` - Runs end-to-end tests with Playwright.
+
+## Testing
+
+The project includes comprehensive testing strategies:
+
+- **Unit Tests:** Using Jest/Vitest to test React components, services, and utilities in isolation.
+- **End-to-End Tests:** Using Playwright to automate browser testing for critical user flows such as authentication, flashcard management, and AI generation.
+- **API Tests:** Manual and automated API testing for backend endpoints.
 
 ## Project Scope
 
