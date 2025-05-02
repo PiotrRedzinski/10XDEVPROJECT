@@ -1,5 +1,7 @@
 # GenFish
 
+###change for PR verificaton
+
 ## Project Description
 
 GenFish is a web-based educational flashcards platform designed to streamline the creation and management of flashcards. The application supports both AI-generated flashcards and manual input, ensuring efficient use of the spaced repetition method through integration with an external repetition algorithm. Users can create an account, log in with a username and password, and manage their flashcards with ease. Key features include flashcard validation (front: max 220 characters, back: max 500 characters), metrics logging, text segmentation for thematic consistency, and a minimalist interface for editing flashcards.
