@@ -10,7 +10,7 @@ export const prerender = false;
 // Extend Astro's APIContext.locals to include our custom properties
 declare global {
   interface Locals {
-    user: { id: string; [key: string]: any };
+    user: { id: string; [key: string]: unknown };
     supabase: SupabaseClient<Database>;
   }
 }
@@ -130,6 +130,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     try {
       body = await request.json();
     } catch (error) {
+      console.error("Error in POST /api/flashcards:", error);
       return new Response(JSON.stringify({ error: "Invalid JSON in request body" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },

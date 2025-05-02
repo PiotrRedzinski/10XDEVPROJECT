@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { flashcardsService } from "@/lib/services/flashcards.service";
-import { z } from "zod";
+//import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/db/database.types";
 import { LoggingService } from "@/lib/services/logging.service";
@@ -10,7 +10,7 @@ export const prerender = false;
 // Extend Astro's APIContext.locals to include our custom properties
 declare global {
   interface Locals {
-    user: { id: string; [key: string]: any };
+    user: { id: string; [key: string]: unknown };
     supabase: SupabaseClient<Database>;
   }
 }
@@ -136,6 +136,7 @@ export const PUT: APIRoute = async ({ params, request, locals }) => {
     try {
       body = await request.json();
     } catch (error) {
+      console.error("Error in PUT /api/flashcards/:id:", error);
       return new Response(JSON.stringify({ error: "Invalid JSON in request body" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
