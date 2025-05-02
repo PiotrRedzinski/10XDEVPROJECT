@@ -1,7 +1,5 @@
-import type { AstroCookies } from "astro";
 import { createServerClient, type CookieOptionsWithName, createBrowserClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "./database.types";
 
 const supabaseUrl = import.meta.env.SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY;
@@ -83,14 +81,14 @@ export const cookieOptions: CookieOptionsWithName = {
   maxAge: 60 * 60 * 24 * 7, // 7 days
 };
 
-function parseCookieHeader(cookieHeader: string): { name: string; value: string }[] {
-  return cookieHeader.split(";").map((cookie) => {
-    const [name, ...rest] = cookie.trim().split("=");
-    return { name, value: rest.join("=") };
-  });
+// Type for cookie methods
+interface CookieInterface {
+  get(name: string): { value: string | null } | null;
+  set(name: string, value: string, options?: CookieOptionsWithName): void;
+  delete(name: string, options?: { path?: string }): void;
 }
 
-export function createSupabaseServerInstance(context: { cookies: any; headers: Headers }) {
+export function createSupabaseServerInstance(context: { cookies: CookieInterface; headers: Headers }) {
   console.log("[createSupabaseServerInstance] Creating server instance with:", {
     hasCookies: !!context.cookies,
     hasHeaders: !!context.headers,
@@ -109,7 +107,7 @@ export function createSupabaseServerInstance(context: { cookies: any; headers: H
         console.log(`[Supabase Server] Getting cookie ${name}:`, cookie?.value ?? null);
         return cookie?.value ?? null;
       },
-      set(name: string, value: string, options: CookieOptionsWithName) {
+      set(name: string, value: string) {
         console.log(`[Supabase Server] Setting cookie ${name}`);
         context.cookies.set(name, value, {
           path: "/",
@@ -119,7 +117,7 @@ export function createSupabaseServerInstance(context: { cookies: any; headers: H
           maxAge: 60 * 60 * 24 * 7, // 7 days
         });
       },
-      remove(name: string, options: CookieOptionsWithName) {
+      remove(name: string) {
         console.log(`[Supabase Server] Removing cookie ${name}`);
         context.cookies.delete(name, { path: "/" });
       },

@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import { cn } from "@/lib/utils";
 
 interface NavigationProps extends React.HTMLAttributes<HTMLElement> {
@@ -34,6 +35,11 @@ const NavigationBrand = React.forwardRef<HTMLAnchorElement, React.AnchorHTMLAttr
 );
 
 NavigationBrand.displayName = "NavigationBrand";
+
+NavigationBrand.propTypes = {
+  className: PropTypes.string,
+  children: PropTypes.node,
+};
 
 const NavigationItems = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, children, ...props }, ref) => {
@@ -73,6 +79,12 @@ const NavigationItem = React.forwardRef<HTMLAnchorElement, NavigationItemProps>(
 
 NavigationItem.displayName = "NavigationItem";
 
+NavigationItem.propTypes = {
+  className: PropTypes.string,
+  active: PropTypes.bool,
+  children: PropTypes.node,
+};
+
 const NavigationMobileToggle = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement>>(
   ({ className, ...props }, ref) => {
     return (
@@ -98,6 +110,11 @@ const NavigationMobileToggle = React.forwardRef<HTMLButtonElement, React.ButtonH
 
 NavigationMobileToggle.displayName = "NavigationMobileToggle";
 
+NavigationMobileToggle.propTypes = {
+  className: PropTypes.string,
+  children: PropTypes.node,
+};
+
 const NavigationMobileMenu = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, children, ...props }, ref) => {
     return (
@@ -118,5 +135,10 @@ const NavigationMobileMenu = React.forwardRef<HTMLDivElement, React.HTMLAttribut
 );
 
 NavigationMobileMenu.displayName = "NavigationMobileMenu";
+
+NavigationMobileMenu.propTypes = {
+  className: PropTypes.string,
+  children: PropTypes.node,
+};
 
 export { Navigation, NavigationBrand, NavigationItems, NavigationItem, NavigationMobileToggle, NavigationMobileMenu };

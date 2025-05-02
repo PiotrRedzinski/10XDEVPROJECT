@@ -24,10 +24,10 @@ export function ResetPasswordForm() {
     resolver: zodResolver(resetSchema),
   });
 
-  const onSubmit = async (data: ResetFormData) => {
+  const onSubmit = async () => {
     setIsLoading(true);
     // Backend integration will be implemented later
-    console.log(data);
+    // Form data will be used when backend integration is completed
     setIsLoading(false);
     setIsSubmitted(true);
   };
@@ -53,7 +53,7 @@ export function ResetPasswordForm() {
       <div>
         <h3 className="text-lg font-medium text-gray-900">Reset your password</h3>
         <p className="mt-2 text-sm text-gray-600">
-          Enter your email address and we'll send you a link to reset your password.
+          Enter your email address and we&apos;ll send you a link to reset your password.
         </p>
       </div>
 
