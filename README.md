@@ -1,4 +1,4 @@
-# GenFish - AI-Powered Flashcard Generator
+# GenFish - AI-Powered Flashcard Generator - added permision to github token
 
 GenFish is a modern web application that leverages AI to automatically generate high-quality flashcards from text inputs. Built with a robust and cutting-edge tech stack, it streamlines the creation of study materials for students, educators, and lifelong learners.
 
