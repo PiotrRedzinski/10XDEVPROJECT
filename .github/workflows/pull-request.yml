@@ -19,8 +19,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: ".nvmrc"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -39,8 +39,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'npm'
+          node-version-file: ".nvmrc"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -58,7 +58,7 @@ jobs:
   status-comment:
     name: PR Status Comment
     runs-on: ubuntu-latest
-    needs: [lint,unit-test]
+    needs: [lint, unit-test]
     if: always()
     steps:
       - name: Download unit test coverage
@@ -71,7 +71,7 @@ jobs:
         id: check-results
         run: |
           UNIT_TEST_RESULT="${{ needs.unit-test.result }}"
-          
+
           if [[ "$UNIT_TEST_RESULT" == "success" ]]; then
             echo "status=✅ All tests passed successfully!" >> $GITHUB_OUTPUT
             echo "result=success" >> $GITHUB_OUTPUT
@@ -79,7 +79,7 @@ jobs:
             echo "status=❌ Some tests failed. Please check the logs." >> $GITHUB_OUTPUT
             echo "result=failure" >> $GITHUB_OUTPUT
           fi
-          
+
           # Get coverage summary if exists
           if [ -f "./coverage/lcov-report/index.html" ]; then
             COVERAGE=$(grep -o 'fraction">[0-9.]*%' ./coverage/lcov-report/index.html | grep -o '[0-9.]*%' | head -1)
@@ -104,18 +104,18 @@ jobs:
             const status = '${{ steps.check-results.outputs.status }}';
             const coverage = '${{ steps.check-results.outputs.coverage }}';
             const unitResult = '${{ steps.check-results.outputs.unit_result }}';
-            
+
             const prNumber = context.issue.number;
-            
+
             let commentBody = `## PR Tests Status\n\n`;
             commentBody += `**Status**: ${status}\n\n`;
             commentBody += `**Unit Test Coverage**: ${coverage}\n\n`;
             commentBody += `**Unit Tests**: ${unitResult}\n\n`;
             commentBody += `*Automated comment from GitHub Actions workflow*`;
-            
+
             github.rest.issues.createComment({
               issue_number: prNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: commentBody
-            }); 
+            });

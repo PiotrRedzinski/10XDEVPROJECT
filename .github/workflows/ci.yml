@@ -11,19 +11,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version-file: '.nvmrc' # Use the Node.js version specified in .nvmrc
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version-file: ".nvmrc" # Use the Node.js version specified in .nvmrc
 
-    - name: Install dependencies
-      run: npm ci # Use npm ci for installing dependencies
+      - name: Install dependencies
+        run: npm ci # Use npm ci for installing dependencies
 
-    - name: Run unit tests
-      run: npm run test # Ensure this script is defined in your package.json
+      - name: Run unit tests
+        run: npm run test # Ensure this script is defined in your package.json
 
-    - name: Build production version
-      run: npm run build # Ensure this script is defined in your package.json 
+      - name: Build production version
+        run: npm run build # Ensure this script is defined in your package.json

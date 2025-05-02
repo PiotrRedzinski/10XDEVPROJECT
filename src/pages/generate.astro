@@ -8,11 +8,13 @@ export const prerender = false;
 
 // Get initial session
 const supabase = createSupabaseServer(Astro.cookies);
-const { data: { user } } = await supabase.auth.getUser();
+const {
+  data: { user },
+} = await supabase.auth.getUser();
 
 // This should never happen due to middleware, but just in case
 if (!user) {
-  return Astro.redirect('/login');
+  return Astro.redirect("/login");
 }
 ---
 
@@ -23,10 +25,12 @@ if (!user) {
       <p class="text-airbnb-foggy mb-5">
         Transform your text into effective flashcards using AI. Paste or type your text below.
       </p>
-      
+
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-[#F7F7F7] p-5 rounded-lg border border-gray-200 mb-3">
         <div class="flex items-start space-x-2">
-          <div class="w-7 h-7 rounded-full bg-airbnb-rausch flex items-center justify-center text-white font-bold">1</div>
+          <div class="w-7 h-7 rounded-full bg-airbnb-rausch flex items-center justify-center text-white font-bold">
+            1
+          </div>
           <div>
             <h3 class="font-semibold text-airbnb-hof">Min length: 1,000 chars</h3>
           </div>
@@ -39,9 +43,9 @@ if (!user) {
         </div>
       </div>
     </div>
-  
+
     <div class="bg-white rounded-xl shadow-lg p-6 pt-3 border-0 overflow-hidden">
       <GenerateFlashcardsForm client:load />
     </div>
   </div>
-</MainLayout> 
+</MainLayout>
