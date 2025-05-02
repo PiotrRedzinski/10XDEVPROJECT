@@ -1,7 +1,6 @@
-import { test, expect } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { FlashcardsGeneratorPage } from "../page-objects/FlashcardsGeneratorPage";
 import { LoginPage } from "../page-objects/LoginPage";
-import { C } from "vitest/dist/chunks/reporters.d.79o4mouw.js";
 
 test.describe("End-to-end Flow", () => {
   let generatorPage: FlashcardsGeneratorPage;

@@ -37,7 +37,7 @@ export function ResetPasswordForm() {
       <div className="text-center">
         <h3 className="text-lg font-medium text-gray-900">Check your email</h3>
         <p className="mt-2 text-sm text-gray-600">
-          We've sent you a link to reset your password. The link will expire in 24 hours.
+          We&apos;ve sent you a link to reset your password. The link will expire in 24 hours.
         </p>
         <div className="mt-6">
           <a href="/login" className="text-sm font-medium text-rose-600 hover:text-rose-500">

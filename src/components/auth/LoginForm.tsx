@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -66,9 +65,9 @@ export function LoginForm() {
         Sign in
       </AuthButton>
 
-      <p className="text-center text-sm text-gray-600">
-        Don't have an account?{" "}
-        <a href="/register" className="font-medium text-rose-600 hover:text-rose-500">
+      <p className="mt-2 text-xs text-gray-500">
+        Don&apos;t have an account?{" "}
+        <a href="/register" className="text-airbnb-rausch font-medium">
           Sign up
         </a>
       </p>
