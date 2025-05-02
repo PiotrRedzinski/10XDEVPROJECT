@@ -4,96 +4,118 @@ on:
   pull_request:
     branches: [master]
 
+permissions:
+  contents: read
+  pull-requests: write # Needed for status-comment job
+
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
-      - name: Run linters
+
+      - name: Run lint
         run: npm run lint
 
   unit-test:
     name: Unit Tests
-    needs: lint
     runs-on: ubuntu-latest
-    
+    needs: lint
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
-      - name: Run unit tests with coverage
+
+      - name: Run tests
         run: npm run test:coverage
-      
-      - name: Upload coverage report
+
+      - name: Upload coverage reports
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-coverage
-          path: coverage/
+          path: ./coverage/
           retention-days: 7
 
-
   status-comment:
-    name: Status Comment
-    if: ${{ always() }}
-    needs: [lint, unit-test]
+    name: PR Status Comment
     runs-on: ubuntu-latest
-    
+    needs: [lint,unit-test]
+    if: always()
     steps:
-      - name: Check build matrix status
-        if: ${{ needs.lint.result == 'success' && needs.unit-test.result == 'success' }}
-        run: echo "All checks have passed!"
+      - name: Download unit test coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-test-coverage
+          path: ./coverage/
+
+      - name: Check test results
+        id: check-results
+        run: |
+          UNIT_TEST_RESULT="${{ needs.unit-test.result }}"
+          
+          if [[ "$UNIT_TEST_RESULT" == "success" ]]; then
+            echo "status=✅ All tests passed successfully!" >> $GITHUB_OUTPUT
+            echo "result=success" >> $GITHUB_OUTPUT
+          else
+            echo "status=❌ Some tests failed. Please check the logs." >> $GITHUB_OUTPUT
+            echo "result=failure" >> $GITHUB_OUTPUT
+          fi
+          
+          # Get coverage summary if exists
+          if [ -f "./coverage/lcov-report/index.html" ]; then
+            COVERAGE=$(grep -o 'fraction">[0-9.]*%' ./coverage/lcov-report/index.html | grep -o '[0-9.]*%' | head -1)
+            echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
+          else
+            echo "coverage=Not available" >> $GITHUB_OUTPUT
+          fi
+
+          # Create outputs for test results
+          if [[ "$UNIT_TEST_RESULT" == "success" ]]; then
+            echo "unit_result=✅ Passed" >> $GITHUB_OUTPUT
+          else
+            echo "unit_result=❌ Failed" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create PR comment
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const { lint, unit_test } = context.payload.workflow_run || {};
-            const lintStatus = "${{ needs.lint.result }}" === "success" ? "✅" : "❌";
-            const unitTestStatus = "${{ needs.unit-test.result }}" === "success" ? "✅" : "❌";
+            const result = '${{ steps.check-results.outputs.result }}';
+            const status = '${{ steps.check-results.outputs.status }}';
+            const coverage = '${{ steps.check-results.outputs.coverage }}';
+            const unitResult = '${{ steps.check-results.outputs.unit_result }}';
             
+            const prNumber = context.issue.number;
             
-            const overallStatus = (lintStatus === "✅" && unitTestStatus === "✅") 
-              ? "✅ All checks passed!"
-              : "❌ Some checks failed!";
-            
-            const comment = `## Pull Request Checks Results
-            
-            ${overallStatus}
-            
-            | Check | Status |
-            | ----- | ------ |
-            | Lint | ${lintStatus} |
-            | Unit Tests | ${unitTestStatus} |
-            
-            [View workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId})
-            `;
+            let commentBody = `## PR Tests Status\n\n`;
+            commentBody += `**Status**: ${status}\n\n`;
+            commentBody += `**Unit Test Coverage**: ${coverage}\n\n`;
+            commentBody += `**Unit Tests**: ${unitResult}\n\n`;
+            commentBody += `*Automated comment from GitHub Actions workflow*`;
             
             github.rest.issues.createComment({
-              issue_number: context.issue.number,
+              issue_number: prNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: comment
+              body: commentBody
             }); 
