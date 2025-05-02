@@ -199,17 +199,17 @@ export const flashcardsService = {
     }
 
     // Check if flashcard exists and belongs to the user
-    try {
-      await this.getFlashcardById(supabase, userId, flashcardId, logger);
-    } catch (error) {
-      // Re-throw the error from getFlashcardById
-      throw error;
-    }
+    // try {
+    await this.getFlashcardById(supabase, userId, flashcardId, logger);
+    // } catch (error) {
+    //   // Re-throw the error from getFlashcardById
+    //   throw error;
+    // }
 
     const { front, back, status } = validation.data;
 
     // Create update object with required fields
-    const updateData: any = {
+    const updateData: unknown = {
       front,
       back,
       updated_at: new Date().toISOString(),
@@ -256,13 +256,13 @@ export const flashcardsService = {
     }
 
     // Check if flashcard exists and belongs to the user
-    let flashcard;
-    try {
-      flashcard = await this.getFlashcardById(supabase, userId, flashcardId, logger);
-    } catch (error) {
-      // Re-throw the error from getFlashcardById
-      throw error;
-    }
+    //const flashcard;
+    // try {
+    const flashcard = await this.getFlashcardById(supabase, userId, flashcardId, logger);
+    // } catch (error) {
+    //   // Re-throw the error from getFlashcardById
+    //   throw error;
+    // }
 
     const { action } = validation.data;
     let status = flashcard.status;
@@ -306,12 +306,12 @@ export const flashcardsService = {
     logger?: LoggingService
   ): Promise<void> {
     // Check if flashcard exists and belongs to the user
-    try {
-      await this.getFlashcardById(supabase, userId, flashcardId, logger);
-    } catch (error) {
-      // Re-throw the error from getFlashcardById
-      throw error;
-    }
+    // try {
+    await this.getFlashcardById(supabase, userId, flashcardId, logger);
+    // } catch (error) {
+    //   // Re-throw the error from getFlashcardById
+    //   throw error;
+    // }
 
     const { error } = await supabase.from("flashcards").delete().eq("id", flashcardId).eq("user_id", userId);
 
