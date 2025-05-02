@@ -1,0 +1,147 @@
+name: Pull Request Workflow
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linters
+        run: npm run lint
+
+  unit-test:
+    name: Unit Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
+      
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-coverage
+          path: coverage/
+          retention-days: 7
+
+  e2e-test:
+    name: E2E Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    environment: integration
+    
+    env:
+      PUBLIC_SUPABASE_URL: ${{ secrets.PUBLIC_SUPABASE_URL }}
+      PUBLIC_SUPABASE_KEY: ${{ secrets.PUBLIC_SUPABASE_KEY }}
+      PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.PUBLIC_SUPABASE_ANON_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+      TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+      
+      - name: Run E2E tests
+        run: npm run test:e2e
+      
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+          
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results/
+          retention-days: 7
+
+  status-comment:
+    name: Status Comment
+    if: ${{ always() }}
+    needs: [lint, unit-test, e2e-test]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check build matrix status
+        if: ${{ needs.lint.result == 'success' && needs.unit-test.result == 'success' && needs.e2e-test.result == 'success' }}
+        run: echo "All checks have passed!"
+
+      - name: Create PR comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { lint, unit_test, e2e_test } = context.payload.workflow_run || {};
+            const lintStatus = "${{ needs.lint.result }}" === "success" ? "✅" : "❌";
+            const unitTestStatus = "${{ needs.unit-test.result }}" === "success" ? "✅" : "❌";
+            const e2eTestStatus = "${{ needs.e2e-test.result }}" === "success" ? "✅" : "❌";
+            
+            const overallStatus = (lintStatus === "✅" && unitTestStatus === "✅" && e2eTestStatus === "✅") 
+              ? "✅ All checks passed!"
+              : "❌ Some checks failed!";
+            
+            const comment = `## Pull Request Checks Results
+            
+            ${overallStatus}
+            
+            | Check | Status |
+            | ----- | ------ |
+            | Lint | ${lintStatus} |
+            | Unit Tests | ${unitTestStatus} |
+            | E2E Tests | ${e2eTestStatus} |
+            
+            [View workflow run](${context.payload.repository.html_url}/actions/runs/${context.runId})
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            }); 
