@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import { cn } from "@/lib/utils";
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -35,12 +36,14 @@ const CardHeader = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDiv
 CardHeader.displayName = "CardHeader";
 
 const CardTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
-  ({ className, ...props }, ref) => (
+  ({ className, children, ...props }, ref) => (
     <h3
       ref={ref}
       className={cn("font-semibold leading-none tracking-tight text-xl text-gray-900", className)}
       {...props}
-    />
+    >
+      {children}
+    </h3>
   )
 );
 
@@ -71,5 +74,10 @@ const CardImage = React.forwardRef<HTMLImageElement, React.ImgHTMLAttributes<HTM
 );
 
 CardImage.displayName = "CardImage";
+
+CardImage.propTypes = {
+  className: PropTypes.string,
+  alt: PropTypes.string.isRequired,
+};
 
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, CardImage };

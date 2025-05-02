@@ -46,8 +46,10 @@ const ListItem = React.forwardRef<HTMLLIElement, ListItemProps>(
 ListItem.displayName = "ListItem";
 
 const ListItemTitle = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLHeadingElement>>(
-  ({ className, ...props }, ref) => (
-    <h4 ref={ref} className={cn("text-sm font-medium text-gray-900", className)} {...props} />
+  ({ className, children, ...props }, ref) => (
+    <h4 ref={ref} className={cn("text-sm font-medium text-gray-900", className)} {...props}>
+      {children}
+    </h4>
   )
 );
 
