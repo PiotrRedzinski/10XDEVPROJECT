@@ -4,10 +4,6 @@ on:
   pull_request:
     branches: [master]
 
-permissions:
-  contents: read
-  pull-requests: write # Needed for status-comment job ...
-
 jobs:
   lint:
     name: Lint
