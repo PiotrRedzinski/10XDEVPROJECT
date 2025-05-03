@@ -9,6 +9,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   // Create Supabase client and add to locals
   const supabase = createSupabaseServer(cookies);
+  console.log("Using Supabase URL:", import.meta.env.PUBLIC_SUPABASE_URL);
   context.locals.supabase = supabase;
 
   // Skip auth check for public paths
