@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { FlashcardDTO } from "@/types";
-import { createHash } from "crypto";
 
 interface CachedGeneration {
   flashcards: FlashcardDTO[];
@@ -14,17 +13,21 @@ export class CacheService {
   constructor(private readonly supabase: SupabaseClient) {}
 
   /**
-   * Generates a unique hash for the input text
+   * Generates a unique hash for the input text using Web Crypto API
    */
-  private generateHash(text: string): string {
-    return createHash("sha256").update(text).digest("hex");
+  private async generateHash(text: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
   }
 
   /**
    * Checks if there's a cached generation for the given text
    */
   async getCachedGeneration(text: string, userId: string): Promise<CachedGeneration | null> {
-    const textHash = this.generateHash(text);
+    const textHash = await this.generateHash(text);
     const cacheExpiry = new Date(Date.now() - this.CACHE_DURATION_MS).toISOString();
 
     // Check for existing generation with the same hash
@@ -64,7 +67,7 @@ export class CacheService {
    * Saves the text hash in the generation session for future cache lookups
    */
   async saveTextHash(text: string, sessionId: string): Promise<void> {
-    const textHash = this.generateHash(text);
+    const textHash = await this.generateHash(text);
     const { error } = await this.supabase
       .from("ai_generation_sessions")
       .update({ text_hash: textHash })
