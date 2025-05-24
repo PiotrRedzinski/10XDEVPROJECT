@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@astrojs/cloudflare": "^7.0.0",
-    "@astrojs/node": "^7.0.0",
+    "@astrojs/node": "^6.0.0",
     "@astrojs/react": "^3.0.0",
     "@astrojs/sitemap": "^3.0.0",
     "@astrojs/tailwind": "^5.0.0",
@@ -35,7 +35,7 @@
     "@supabase/supabase-js": "^2.49.4",
     "@types/react": "19.0.12",
     "@types/react-dom": "19.0.4",
-    "astro": "^4.0.0",
+    "astro": "^3.6.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lightningcss": "1.24.1",
