@@ -4,7 +4,7 @@ import { loadEnv } from "vite";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
 import tailwind from "@astrojs/tailwind";
-import node from "@astrojs/node";
+import cloudflare from "@astrojs/cloudflare";
 
 const env = loadEnv("development", ".", "");
 
@@ -12,13 +12,10 @@ const env = loadEnv("development", ".", "");
 export default defineConfig({
   output: "server",
   integrations: [react(), sitemap(), tailwind()],
-  server: { port: 3000 },
-  adapter: node({
-    mode: "standalone",
+  adapter: cloudflare({
+    mode: "directory",
+    functionPerRoute: true,
   }),
-  session: {
-    driver: "node",
-  },
   vite: {
     build: {
       rollupOptions: {

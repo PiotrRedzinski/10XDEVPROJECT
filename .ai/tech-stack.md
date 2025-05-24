@@ -5,7 +5,7 @@ Poniżej znajduje się krytyczna, ale rzeczowa analiza przedstawionego tech-stac
      Astro umożliwia renderowanie statyczne z opcjonalną interaktywnością – to bardzo korzystne przy tworzeniu MVP, gdzie zależy nam na szybkiej i responsywnej stronie. Wykorzystanie popularnych narzędzi, takich jak React i TypeScript, dodatkowo pozwala na łatwe skalowanie aplikacji oraz dostęp do rozbudowanych narzędzi deweloperskich. Tailwind i Shadcn/ui skracają czas na projektowanie oraz implementację UI, dzięki czemu możesz szybko osiągnąć pożądany wygląd i funkcjonalność.
      
    - **Backend (Supabase):**  
-     Supabase oferuje gotową bazę danych PostgreSQL, mechanizmy autentykacji oraz SDK, co znacząco przyspiesza wdrożenie backendu – jest to idealne rozwiązanie dla MVP, które pozwala uniknąć konieczności budowania „od zera" całej logiki backendowej.
+     Supabase oferuje gotową bazę danych PostgreSQL, mechanizmy autentykacji oraz SDK, co znacząco przyspiesza wdrożenie backendu – jest to idealne rozwiązanie dla MVP, które pozwala uniknąć konieczności budowania "od zera" całej logiki backendowej.
      
    - **Integracja AI (Openrouter.ai):**  
      Użycie jednej z usług AI pozwala na eksperymentowanie z różnymi modelami bez konieczności integracji kilku oddzielnych API, co również przyspiesza rozwój MVP.
@@ -23,7 +23,7 @@ Poniżej znajduje się krytyczna, ale rzeczowa analiza przedstawionego tech-stac
      Supabase opiera się na PostgreSQL, który jest skalowalny, aczkolwiek wzrost ruchu i złożoność operacji mogą wymagać przejścia na bardziej rozbudowaną infrastrukturę (np. replikacja, optymalizacja zapytań).  
      
    - **CI/CD i hosting:**  
-     Github Actions i DigitalOcean zapewniają solidny fundament dla skalowania – możliwość wdrażania pipeline'ów CI/CD umożliwi automatyczne testowanie i wdrażanie, a elastyczność DigitalOcean (np. poprzez skalowanie klastrów lub dodawanie zasobów) pozwoli na obsługę rosnącego obciążenia.
+     Github Actions i Cloudflare zapewniają solidny fundament dla skalowania – możliwość wdrażania pipeline'ów CI/CD umożliwi automatyczne testowanie i wdrażanie, a elastyczność Cloudflare (np. poprzez skalowanie klastrów lub dodawanie zasobów) pozwoli na obsługę rosnącego obciążenia.
 
    - **Testy:**  
      Zestaw narzędzi testowych (Jest/Vitest dla testów jednostkowych, Playwright dla testów E2E) umożliwia skalowanie testów wraz z rozwojem aplikacji. Automatyzacja testów w pipeline'ach CI/CD pozwala na utrzymanie jakości kodu przy rosnącej złożoności projektu i zespołu.
@@ -73,7 +73,7 @@ Poniżej znajduje się krytyczna, ale rzeczowa analiza przedstawionego tech-stac
      Konieczne jest zrozumienie i zarządzanie ryzykiem związanym z korzystaniem z zewnętrznych modeli AI – m.in. ochrona kluczy API oraz kontrola nad limitem zapytań.
      
    - **CI/CD i Hosting:**  
-     Standardowe praktyki w Github Actions i konfiguracja środowisk w DigitalOcean (np. firewall, monitoring) pozwalają na zapewnienie dodatkowych warstw ochronnych.
+     Standardowe praktyki w Github Actions i konfiguracja środowisk w Cloudflare (np. firewall, monitoring) pozwalają na zapewnienie dodatkowych warstw ochronnych.
 
    - **Testy:**  
      Kompleksowe testy zwiększają bezpieczeństwo aplikacji poprzez weryfikację poprawności autentykacji, autoryzacji i walidacji danych. Testy automatyczne pozwalają na szybkie wykrywanie potencjalnych luk bezpieczeństwa wprowadzonych podczas rozwoju.
