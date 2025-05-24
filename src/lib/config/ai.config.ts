@@ -11,29 +11,28 @@ export const AI_CONFIG = {
   },
   GENERATION: {
     MAX_FLASHCARDS: 20,
-    SYSTEM_PROMPT: `You are an AI tutor tasked with creating educational flashcards from provided text.
-Generate concise, clear flashcards that test key concepts and knowledge.
-Each flashcard should have:
-- A clear, focused question or prompt on the front
-- A concise but complete answer on the back
-- No duplicate content across cards
+    // Load system prompt lazily to reduce initial bundle size
+    get SYSTEM_PROMPT() {
+      return `You are a helpful AI assistant that generates flashcards from provided text.
+Your task is to create concise and effective flashcards that help users learn the material.
 
-You MUST respond with ONLY a valid JSON array of objects. Each object MUST have exactly two properties:
-- "front": string (max 220 chars) - the question/prompt
-- "back": string (max 500 chars) - the answer
+Rules for generating flashcards:
+1. Create clear, focused questions for the front
+2. Provide concise, accurate answers for the back
+3. Break complex topics into smaller, manageable cards
+4. Use simple, direct language
+5. Avoid overly long or complex cards
+6. Focus on key concepts and important details
+7. Generate between 5-20 cards depending on content length
 
-Example format:
+Format your response as a JSON array of objects with 'front' and 'back' properties.
+Example:
 [
   {
     "front": "What is photosynthesis?",
-    "back": "The process by which plants convert light energy into chemical energy"
-  },
-  {
-    "front": "What are the main products of photosynthesis?",
-    "back": "Glucose and oxygen"
+    "back": "The process by which plants convert light energy into chemical energy to produce glucose from CO2 and water"
   }
-]
-
-Do not include any text before or after the JSON array. The response must be parseable by JSON.parse().`,
+]`;
+    },
   },
 } as const;

@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { z } from "zod";
+import { generateRequestSchema } from "@/lib/validation/generate.schema";
 import { AIGenerationService } from "@/lib/services/ai-generation.service";
 import { RateLimiterService } from "@/lib/services/rate-limiter.service";
 import { LoggingService } from "@/lib/services/logging.service";
@@ -8,20 +8,19 @@ import { validateEnv } from "@/lib/config/env.validation";
 // Prevent static generation of this endpoint
 export const prerender = false;
 
-// Validate environment variables
-validateEnv();
-
-// Zod schema for request validation
-const generateRequestSchema = z.object({
-  text: z
-    .string()
-    .min(1000, "Text must be at least 1000 characters long")
-    .max(10000, "Text cannot exceed 10000 characters"),
-});
+// Create service instances lazily
+let logger: LoggingService;
+let rateLimiter: RateLimiterService;
+let generationService: AIGenerationService;
 
 export const POST: APIRoute = async ({ request, locals }) => {
-  const logger = new LoggingService(locals.supabase);
-  const rateLimiter = new RateLimiterService(locals.supabase);
+  // Validate environment variables only on first request
+  validateEnv();
+
+  // Initialize services lazily
+  if (!logger) logger = new LoggingService(locals.supabase);
+  if (!rateLimiter) rateLimiter = new RateLimiterService(locals.supabase);
+  if (!generationService) generationService = new AIGenerationService(locals.supabase);
 
   try {
     // Ensure user is authenticated
@@ -52,7 +51,21 @@ export const POST: APIRoute = async ({ request, locals }) => {
     };
 
     // Parse and validate request body
-    const body = await request.json();
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      return new Response(
+        JSON.stringify({
+          error: "Invalid JSON in request body",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
     const validationResult = generateRequestSchema.safeParse(body);
 
     if (!validationResult.success) {
@@ -75,8 +88,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     // Extract validated data
     const { text } = validationResult.data;
 
-    // Initialize service and generate flashcards
-    const generationService = new AIGenerationService(supabase);
+    // Generate flashcards
     const result = await generationService.generateFlashcards(text, session.user.id);
 
     return new Response(JSON.stringify(result), {
