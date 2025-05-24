@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+let isValidated = false;
+
 const envSchema = z.object({
   OPENAI_API_KEY: z.string().min(1, "OpenAI API key is required"),
   PUBLIC_SUPABASE_URL: z.string().url("Invalid Supabase URL"),
@@ -7,14 +9,16 @@ const envSchema = z.object({
 });
 
 export function validateEnv(): void {
-  const result = envSchema.safeParse(import.meta.env);
+  if (isValidated) return;
 
-  if (!result.success) {
-    const errors = result.error.errors.map((error) => {
-      const field = error.path.join(".");
-      return `${field}: ${error.message}`;
+  try {
+    envSchema.parse({
+      OPENAI_API_KEY: import.meta.env.OPENAI_API_KEY,
+      PUBLIC_SUPABASE_URL: import.meta.env.PUBLIC_SUPABASE_URL,
+      PUBLIC_SUPABASE_ANON_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
     });
-
-    throw new Error(`Environment validation failed:\n${errors.join("\n")}`);
+    isValidated = true;
+  } catch (error) {
+    throw new Error(`Environment validation failed: ${error instanceof Error ? error.message : "Unknown error"}`);
   }
 }

@@ -15,14 +15,31 @@ interface OpenAIResponse {
 }
 
 export class AIGenerationService {
-  private rateLimiter: RateLimiterService;
-  private cache: CacheService;
-  private logger: LoggingService;
+  private _rateLimiter?: RateLimiterService;
+  private _cache?: CacheService;
+  private _logger?: LoggingService;
 
-  constructor(private readonly supabase: SupabaseClient) {
-    this.rateLimiter = new RateLimiterService(supabase);
-    this.cache = new CacheService(supabase);
-    this.logger = new LoggingService(supabase);
+  constructor(private readonly supabase: SupabaseClient) {}
+
+  private get rateLimiter(): RateLimiterService {
+    if (!this._rateLimiter) {
+      this._rateLimiter = new RateLimiterService(this.supabase);
+    }
+    return this._rateLimiter;
+  }
+
+  private get cache(): CacheService {
+    if (!this._cache) {
+      this._cache = new CacheService(this.supabase);
+    }
+    return this._cache;
+  }
+
+  private get logger(): LoggingService {
+    if (!this._logger) {
+      this._logger = new LoggingService(this.supabase);
+    }
+    return this._logger;
   }
 
   /**
@@ -183,6 +200,18 @@ export class AIGenerationService {
       throw new Error("OpenAI API key not configured");
     }
 
+    // Try to get cached response first
+    const cacheKey = await this.cache.generateHash(text);
+    const { data: cachedResponse } = await this.supabase
+      .from("ai_response_cache")
+      .select("response")
+      .eq("cache_key", cacheKey)
+      .single();
+
+    if (cachedResponse) {
+      return JSON.parse(cachedResponse.response);
+    }
+
     const response = await fetch(AI_CONFIG.OPENAI.API_URL, {
       method: "POST",
       headers: {
@@ -201,19 +230,27 @@ export class AIGenerationService {
             content: text,
           },
         ],
-        max_tokens: AI_CONFIG.OPENAI.MAX_TOKENS,
-        temperature: AI_CONFIG.OPENAI.TEMPERATURE,
       }),
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `OpenAI API error: ${response.statusText}${errorData.error?.message ? ` - ${errorData.error.message}` : ""}`
-      );
+      throw new Error(`OpenAI API error: ${response.statusText}`);
     }
 
     const result: OpenAIResponse = await response.json();
+    const flashcards = this.parseAIResponse(result);
+
+    // Cache the response
+    await this.supabase.from("ai_response_cache").insert({
+      cache_key: cacheKey,
+      response: JSON.stringify(flashcards),
+      created_at: new Date().toISOString(),
+    });
+
+    return flashcards;
+  }
+
+  private parseAIResponse(result: OpenAIResponse): FlashcardDTO[] {
     const content = result.choices[0]?.message?.content;
 
     if (!content) {
