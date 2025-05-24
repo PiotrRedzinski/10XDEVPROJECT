@@ -238,7 +238,7 @@ export class AIGenerationService {
     }
 
     const result: OpenAIResponse = await response.json();
-    const flashcards = this.parseAIResponse(result);
+    const flashcards = await this.parseAIResponse(result);
 
     // Cache the response
     await this.supabase.from("ai_response_cache").insert({
@@ -250,7 +250,12 @@ export class AIGenerationService {
     return flashcards;
   }
 
-  private parseAIResponse(result: OpenAIResponse): FlashcardDTO[] {
+  /**
+   * Parses the OpenAI response into flashcards
+   * @param result The raw OpenAI response
+   * @returns Array of parsed flashcards
+   */
+  private async parseAIResponse(result: OpenAIResponse): Promise<FlashcardDTO[]> {
     const content = result.choices[0]?.message?.content;
 
     if (!content) {
