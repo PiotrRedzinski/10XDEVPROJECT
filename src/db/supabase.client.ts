@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+console.log("superbase.client.ts using Supabase URL:", supabaseUrl);
 
 if (!supabaseUrl) throw new Error("Missing env.SUPABASE_URL");
 if (!supabaseAnonKey) throw new Error("Missing env.SUPABASE_ANON_KEY");
