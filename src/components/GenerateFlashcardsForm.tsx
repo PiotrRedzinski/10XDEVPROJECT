@@ -56,6 +56,17 @@ interface RequestDetails {
     textLength: number;
   };
   headers: Record<string, string>;
+  executionDetails: {
+    startTime: string;
+    endTime?: string;
+    duration?: number;
+    stages: {
+      name: string;
+      timestamp: string;
+      status: "started" | "completed" | "error";
+      details?: string;
+    }[];
+  };
 }
 
 const MIN_CHARS = 1000;
@@ -112,44 +123,138 @@ export default function GenerateFlashcardsForm() {
       error: null,
     }));
 
+    const startTime = new Date();
+    const executionStages: RequestDetails["executionDetails"]["stages"] = [];
+
     // Capture request details for logging
     const requestDetails: RequestDetails = {
-      timestamp: new Date().toISOString(),
+      timestamp: startTime.toISOString(),
       endpoint: "/api/ai/generate",
       method: "POST",
       payload: {
-        text: `${state.text.slice(0, 100)}${state.text.length > 100 ? "..." : ""}`, // Truncate for logging
+        text: `${state.text.slice(0, 100)}${state.text.length > 100 ? "..." : ""}`,
         textLength: state.text.length,
       },
       headers: {
         "Content-Type": "application/json",
       },
+      executionDetails: {
+        startTime: startTime.toISOString(),
+        stages: executionStages,
+      },
     };
 
     try {
+      // Log request initiation
+      requestDetails.executionDetails.stages.push({
+        name: "request_initiated",
+        timestamp: new Date().toISOString(),
+        status: "started",
+        details: `Initiating request to generate flashcards from ${state.text.length} characters of text`,
+      });
+
       const response = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: state.text }),
       });
 
+      // Log response received
+      requestDetails.executionDetails.stages.push({
+        name: "response_received",
+        timestamp: new Date().toISOString(),
+        status: "completed",
+        details: `Received response with status ${response.status} ${response.statusText}`,
+      });
+
       if (!response.ok) {
+        requestDetails.executionDetails.stages.push({
+          name: "error_handling",
+          timestamp: new Date().toISOString(),
+          status: "started",
+          details: `Processing error response: ${response.status} ${response.statusText}`,
+        });
+
         const error = await parseErrorResponse(response, requestDetails);
+
+        requestDetails.executionDetails.stages.push({
+          name: "error_handling",
+          timestamp: new Date().toISOString(),
+          status: "completed",
+          details: `Error processed: ${error.message}`,
+        });
+
         throw error;
       }
 
+      // Log parsing response
+      requestDetails.executionDetails.stages.push({
+        name: "parsing_response",
+        timestamp: new Date().toISOString(),
+        status: "started",
+      });
+
       const data = await response.json();
-      console.log("Generated flashcards with IDs:", data.flashcards);
+
+      requestDetails.executionDetails.stages.push({
+        name: "parsing_response",
+        timestamp: new Date().toISOString(),
+        status: "completed",
+        details: `Successfully parsed response with ${data.flashcards?.length || 0} flashcards`,
+      });
+
+      // Log validation
+      requestDetails.executionDetails.stages.push({
+        name: "validation",
+        timestamp: new Date().toISOString(),
+        status: "started",
+      });
 
       if (data.flashcards?.length > 0 && !data.flashcards[0].generation_id) {
+        requestDetails.executionDetails.stages.push({
+          name: "validation",
+          timestamp: new Date().toISOString(),
+          status: "error",
+          details: "Flashcards are missing generation_id",
+        });
         console.error("Flashcards are missing generation_id");
+      } else {
+        requestDetails.executionDetails.stages.push({
+          name: "validation",
+          timestamp: new Date().toISOString(),
+          status: "completed",
+          details: `Validated ${data.flashcards?.length || 0} flashcards`,
+        });
       }
 
       setState((prev) => ({
         ...prev,
         generatedFlashcards: data.flashcards,
       }));
+
+      // Log completion
+      const endTime = new Date();
+      requestDetails.executionDetails.endTime = endTime.toISOString();
+      requestDetails.executionDetails.duration = endTime.getTime() - startTime.getTime();
+
+      requestDetails.executionDetails.stages.push({
+        name: "completion",
+        timestamp: endTime.toISOString(),
+        status: "completed",
+        details: `Generation completed in ${requestDetails.executionDetails.duration}ms`,
+      });
     } catch (error) {
+      const errorTime = new Date();
+      requestDetails.executionDetails.endTime = errorTime.toISOString();
+      requestDetails.executionDetails.duration = errorTime.getTime() - startTime.getTime();
+
+      requestDetails.executionDetails.stages.push({
+        name: "error",
+        timestamp: errorTime.toISOString(),
+        status: "error",
+        details: error instanceof Error ? error.message : "Unknown error occurred",
+      });
+
       console.error("Error generating flashcards:", error);
       setState((prev) => ({
         ...prev,
@@ -158,7 +263,14 @@ export default function GenerateFlashcardsForm() {
           technical: JSON.stringify(
             {
               request: requestDetails,
-              error: error instanceof Error ? error.message : "Unknown error",
+              error:
+                error instanceof Error
+                  ? {
+                      message: error.message,
+                      stack: error.stack,
+                    }
+                  : "Unknown error",
+              executionDetails: requestDetails.executionDetails,
             },
             null,
             2
