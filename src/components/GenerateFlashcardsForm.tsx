@@ -54,6 +54,22 @@ interface RequestDetails {
   payload: {
     text: string;
     textLength: number;
+    fullRequest?: {
+      text: string;
+      metadata?: {
+        textStats: {
+          characters: number;
+          words: number;
+          sentences: number;
+          paragraphs: number;
+        };
+        processingOptions?: {
+          maxTokens?: number;
+          temperature?: number;
+          model?: string;
+        };
+      };
+    };
   };
   headers: Record<string, string>;
   executionDetails: {
@@ -105,6 +121,15 @@ export default function GenerateFlashcardsForm() {
     return null;
   };
 
+  const getTextStats = (text: string) => {
+    return {
+      characters: text.length,
+      words: text.trim().split(/\s+/).length,
+      sentences: text.split(/[.!?]+/).filter(Boolean).length,
+      paragraphs: text.split(/\n\s*\n/).filter(Boolean).length,
+    };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -125,6 +150,7 @@ export default function GenerateFlashcardsForm() {
 
     const startTime = new Date();
     const executionStages: RequestDetails["executionDetails"]["stages"] = [];
+    const textStats = getTextStats(state.text);
 
     // Capture request details for logging
     const requestDetails: RequestDetails = {
@@ -134,6 +160,17 @@ export default function GenerateFlashcardsForm() {
       payload: {
         text: `${state.text.slice(0, 100)}${state.text.length > 100 ? "..." : ""}`,
         textLength: state.text.length,
+        fullRequest: {
+          text: state.text,
+          metadata: {
+            textStats,
+            processingOptions: {
+              maxTokens: 2048, // Add actual values from your configuration
+              temperature: 0.7,
+              model: "gpt-3.5-turbo", // Add actual model being used
+            },
+          },
+        },
       },
       headers: {
         "Content-Type": "application/json",
@@ -145,26 +182,36 @@ export default function GenerateFlashcardsForm() {
     };
 
     try {
-      // Log request initiation
+      // Log request initiation with detailed stats
       requestDetails.executionDetails.stages.push({
         name: "request_initiated",
         timestamp: new Date().toISOString(),
         status: "started",
-        details: `Initiating request to generate flashcards from ${state.text.length} characters of text`,
+        details: `Initiating request to generate flashcards from text:
+- Characters: ${textStats.characters}
+- Words: ${textStats.words}
+- Sentences: ${textStats.sentences}
+- Paragraphs: ${textStats.paragraphs}`,
       });
+
+      const requestBody = {
+        text: state.text,
+      };
 
       const response = await fetch("/api/ai/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: state.text }),
+        body: JSON.stringify(requestBody),
       });
 
-      // Log response received
+      // Log response received with headers
       requestDetails.executionDetails.stages.push({
         name: "response_received",
         timestamp: new Date().toISOString(),
         status: "completed",
-        details: `Received response with status ${response.status} ${response.statusText}`,
+        details: `Received response with:
+- Status: ${response.status} ${response.statusText}
+- Headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()), null, 2)}`,
       });
 
       if (!response.ok) {
@@ -172,7 +219,10 @@ export default function GenerateFlashcardsForm() {
           name: "error_handling",
           timestamp: new Date().toISOString(),
           status: "started",
-          details: `Processing error response: ${response.status} ${response.statusText}`,
+          details: `Processing error response:
+- Status: ${response.status} ${response.statusText}
+- Content-Type: ${response.headers.get("content-type")}
+- Error-Type: ${response.headers.get("x-error-type") || "unknown"}`,
         });
 
         const error = await parseErrorResponse(response, requestDetails);
@@ -192,6 +242,7 @@ export default function GenerateFlashcardsForm() {
         name: "parsing_response",
         timestamp: new Date().toISOString(),
         status: "started",
+        details: "Starting to parse JSON response",
       });
 
       const data = await response.json();
@@ -200,7 +251,10 @@ export default function GenerateFlashcardsForm() {
         name: "parsing_response",
         timestamp: new Date().toISOString(),
         status: "completed",
-        details: `Successfully parsed response with ${data.flashcards?.length || 0} flashcards`,
+        details: `Successfully parsed response:
+- Flashcards generated: ${data.flashcards?.length || 0}
+- Generation ID: ${data.flashcards?.[0]?.generation_id || "N/A"}
+- Response size: ${JSON.stringify(data).length} bytes`,
       });
 
       // Log validation
@@ -252,7 +306,10 @@ export default function GenerateFlashcardsForm() {
         name: "error",
         timestamp: errorTime.toISOString(),
         status: "error",
-        details: error instanceof Error ? error.message : "Unknown error occurred",
+        details: `Error details:
+- Type: ${error instanceof Error ? error.constructor.name : "Unknown"}
+- Message: ${error instanceof Error ? error.message : "Unknown error occurred"}
+- Duration: ${requestDetails.executionDetails.duration}ms`,
       });
 
       console.error("Error generating flashcards:", error);
@@ -266,6 +323,7 @@ export default function GenerateFlashcardsForm() {
               error:
                 error instanceof Error
                   ? {
+                      name: error.constructor.name,
                       message: error.message,
                       stack: error.stack,
                     }
