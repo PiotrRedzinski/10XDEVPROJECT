@@ -7,7 +7,6 @@
     "build": "npm-run-all -p build:*",
     "build:astro": "astro build",
     "build:css": "sass src/:src/ --style=compressed",
-    "build:remix": "cross-env NODE_ENV=production remix build",
     "build:worker": "esbuild ./src/entry.worker.ts --outfile=./public/entry.worker.js --minify --bundle --format=esm --define:process.env.NODE_ENV='\"production\"'",
     "preview": "astro preview",
     "astro": "astro",
