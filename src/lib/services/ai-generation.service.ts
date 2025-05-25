@@ -14,6 +14,24 @@ interface OpenAIResponse {
   }[];
 }
 
+class AIGenerationError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly details?: Record<string, unknown>
+  ) {
+    super(message);
+    this.name = "AIGenerationError";
+  }
+}
+
+interface APIConfigValidation extends Record<string, unknown> {
+  isValid: boolean;
+  apiUrl: string;
+  apiKeyValid: boolean;
+  error?: string;
+}
+
 export class AIGenerationService {
   private _rateLimiter?: RateLimiterService;
   private _cache?: CacheService;
@@ -43,6 +61,63 @@ export class AIGenerationService {
   }
 
   /**
+   * Validates the OpenAI API configuration
+   * @returns Validation result
+   */
+  private async validateAPIConfig(): Promise<APIConfigValidation> {
+    const apiKey = import.meta.env.OPENAI_API_KEY;
+    const apiUrl = import.meta.env.OPENAI_API_URL || "https://api.openai.com/v1/chat/completions";
+
+    if (!apiKey) {
+      return {
+        isValid: false,
+        apiUrl,
+        apiKeyValid: false,
+        error: "OpenAI API key not configured",
+      };
+    }
+
+    try {
+      // Test API key with a minimal request
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: AI_CONFIG.OPENAI.MODEL,
+          messages: [{ role: "user", content: "test" }],
+          max_tokens: 5,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        return {
+          isValid: false,
+          apiUrl,
+          apiKeyValid: false,
+          error: `API key validation failed: ${error.error?.message || "Unknown error"}`,
+        };
+      }
+
+      return {
+        isValid: true,
+        apiUrl,
+        apiKeyValid: true,
+      };
+    } catch (error) {
+      return {
+        isValid: false,
+        apiUrl,
+        apiKeyValid: false,
+        error: `API validation failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      };
+    }
+  }
+
+  /**
    * Generates flashcards from the provided text using AI and saves them to the database.
    * @param text The input text to generate flashcards from
    * @param userId The ID of the user requesting the generation
@@ -52,6 +127,12 @@ export class AIGenerationService {
     const startTime = Date.now();
 
     try {
+      // Validate API configuration first
+      const apiConfig = await this.validateAPIConfig();
+      if (!apiConfig.isValid) {
+        throw new AIGenerationError("OpenAI API configuration is invalid", "INVALID_API_CONFIG", apiConfig);
+      }
+
       // Check cache first
       const cached = await this.cache.getCachedGeneration(text, userId);
       if (cached) {
@@ -72,8 +153,11 @@ export class AIGenerationService {
       const canProceed = await this.rateLimiter.canMakeRequest(userId);
       if (!canProceed) {
         const remaining = await this.rateLimiter.getRemainingRequests(userId);
-        await this.logger.warn("Rate limit exceeded", { userId, remaining });
-        throw new Error(`Rate limit exceeded. Try again later. Remaining requests: ${remaining}`);
+        throw new AIGenerationError(
+          `Rate limit exceeded. Try again later. Remaining requests: ${remaining}`,
+          "RATE_LIMIT_EXCEEDED",
+          { remaining }
+        );
       }
 
       // Create generation session
@@ -168,16 +252,23 @@ export class AIGenerationService {
         sessionMetrics: metrics,
       };
     } catch (error) {
-      // Log error details
-      await this.logger.error("Generation error", {
+      // Enhanced error logging
+      const errorDetails = {
         userId,
-        error: error instanceof Error ? error.message : "Unknown error",
-        stack: error instanceof Error ? error.stack : undefined,
-      });
+        errorType: error instanceof AIGenerationError ? error.code : "UNKNOWN_ERROR",
+        errorMessage: error instanceof Error ? error.message : "Unknown error",
+        errorStack: error instanceof Error ? error.stack : undefined,
+        details: error instanceof AIGenerationError ? error.details : undefined,
+      };
+
+      // Log error details
+      await this.logger.error("Generation error", errorDetails);
 
       const { error: logError } = await this.supabase.from("generation_error_log").insert({
-        error_message: error instanceof Error ? error.message : "Unknown error",
-        error_stack: error instanceof Error ? error.stack : null,
+        error_message: errorDetails.errorMessage,
+        error_stack: errorDetails.errorStack,
+        error_type: errorDetails.errorType,
+        error_details: errorDetails.details,
         input_text_length: text.length,
       });
 
@@ -196,58 +287,61 @@ export class AIGenerationService {
    */
   private async callAIService(text: string): Promise<FlashcardDTO[]> {
     const apiKey = import.meta.env.OPENAI_API_KEY;
+    const apiUrl = import.meta.env.OPENAI_API_URL || "https://api.openai.com/v1/chat/completions";
+
     if (!apiKey) {
-      throw new Error("OpenAI API key not configured");
+      throw new AIGenerationError("OpenAI API key not configured", "MISSING_API_KEY");
     }
 
-    // Try to get cached response first
-    const cacheKey = await this.cache.generateHash(text);
-    const { data: cachedResponse } = await this.supabase
-      .from("ai_response_cache")
-      .select("response")
-      .eq("cache_key", cacheKey)
-      .single();
+    try {
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: AI_CONFIG.OPENAI.MODEL,
+          messages: [
+            {
+              role: "system",
+              content: AI_CONFIG.GENERATION.SYSTEM_PROMPT,
+            },
+            {
+              role: "user",
+              content: text,
+            },
+          ],
+          temperature: AI_CONFIG.OPENAI.TEMPERATURE,
+          max_tokens: AI_CONFIG.OPENAI.MAX_TOKENS,
+        }),
+      });
 
-    if (cachedResponse) {
-      return JSON.parse(cachedResponse.response);
-    }
-
-    const response = await fetch(AI_CONFIG.OPENAI.API_URL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: AI_CONFIG.OPENAI.MODEL,
-        messages: [
+      if (!response.ok) {
+        const error = await response.json();
+        throw new AIGenerationError(
+          `OpenAI API request failed: ${error.error?.message || "Unknown error"}`,
+          "API_REQUEST_FAILED",
           {
-            role: "system",
-            content: AI_CONFIG.GENERATION.SYSTEM_PROMPT,
-          },
-          {
-            role: "user",
-            content: text,
-          },
-        ],
-      }),
-    });
+            status: response.status,
+            statusText: response.statusText,
+            error: error.error,
+          }
+        );
+      }
 
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      const result: OpenAIResponse = await response.json();
+      return this.parseAIResponse(result);
+    } catch (error) {
+      if (error instanceof AIGenerationError) {
+        throw error;
+      }
+      throw new AIGenerationError(
+        `Failed to call OpenAI API: ${error instanceof Error ? error.message : "Unknown error"}`,
+        "API_CALL_FAILED",
+        { originalError: error }
+      );
     }
-
-    const result: OpenAIResponse = await response.json();
-    const flashcards = await this.parseAIResponse(result);
-
-    // Cache the response
-    await this.supabase.from("ai_response_cache").insert({
-      cache_key: cacheKey,
-      response: JSON.stringify(flashcards),
-      created_at: new Date().toISOString(),
-    });
-
-    return flashcards;
   }
 
   /**
