@@ -68,6 +68,11 @@ interface RequestDetails {
           temperature?: number;
           model?: string;
         };
+        configuration?: {
+          apiUrl?: string;
+          apiKeyValid?: boolean;
+          apiKeyPrefix?: string;
+        };
       };
     };
   };
@@ -130,6 +135,35 @@ export default function GenerateFlashcardsForm() {
     };
   };
 
+  const verifyApiConfiguration = async (): Promise<{
+    isValid: boolean;
+    apiUrl: string | null;
+    apiKeyValid: boolean;
+    apiKeyPrefix: string | null;
+    error?: string;
+  }> => {
+    try {
+      const response = await fetch("/api/ai/verify-config");
+      const data = await response.json();
+
+      return {
+        isValid: data.isValid,
+        apiUrl: data.apiUrl,
+        apiKeyValid: data.apiKeyValid,
+        apiKeyPrefix: data.apiKeyPrefix,
+        error: data.error,
+      };
+    } catch (error) {
+      return {
+        isValid: false,
+        apiUrl: null,
+        apiKeyValid: false,
+        apiKeyPrefix: null,
+        error: error instanceof Error ? error.message : "Failed to verify API configuration",
+      };
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -152,7 +186,7 @@ export default function GenerateFlashcardsForm() {
     const executionStages: RequestDetails["executionDetails"]["stages"] = [];
     const textStats = getTextStats(state.text);
 
-    // Capture request details for logging
+    // Verify API configuration first
     const requestDetails: RequestDetails = {
       timestamp: startTime.toISOString(),
       endpoint: "/api/ai/generate",
@@ -165,9 +199,14 @@ export default function GenerateFlashcardsForm() {
           metadata: {
             textStats,
             processingOptions: {
-              maxTokens: 2048, // Add actual values from your configuration
+              maxTokens: 2048,
               temperature: 0.7,
-              model: "gpt-3.5-turbo", // Add actual model being used
+              model: "gpt-3.5-turbo",
+            },
+            configuration: {
+              apiUrl: undefined,
+              apiKeyValid: false,
+              apiKeyPrefix: null,
             },
           },
         },
@@ -181,17 +220,64 @@ export default function GenerateFlashcardsForm() {
       },
     };
 
+    const apiConfig = await verifyApiConfiguration();
+
+    if (!apiConfig.isValid) {
+      const errorMessage = apiConfig.error || "Invalid API configuration";
+      requestDetails.executionDetails.stages.push({
+        name: "config_verification",
+        timestamp: new Date().toISOString(),
+        status: "error",
+        details: `Configuration error: ${errorMessage}
+- API URL: ${apiConfig.apiUrl || "Not configured"}
+- API Key Valid: ${apiConfig.apiKeyValid ? "Yes" : "No"}
+- API Key Format: ${apiConfig.apiKeyPrefix ? "Valid prefix" : "Invalid format"}`,
+      });
+
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: {
+          message: "API Configuration Error",
+          details: errorMessage,
+          technical: JSON.stringify(
+            {
+              apiUrl: apiConfig.apiUrl,
+              apiKeyValid: apiConfig.apiKeyValid,
+              apiKeyPrefix: apiConfig.apiKeyPrefix,
+              error: apiConfig.error,
+            },
+            null,
+            2
+          ),
+        },
+      }));
+      return;
+    }
+
+    requestDetails.executionDetails.stages.push({
+      name: "config_verification",
+      timestamp: new Date().toISOString(),
+      status: "completed",
+      details: "API configuration verified successfully",
+    });
+
     try {
-      // Log request initiation with detailed stats
+      // Log request initiation with detailed stats and config
       requestDetails.executionDetails.stages.push({
         name: "request_initiated",
         timestamp: new Date().toISOString(),
         status: "started",
-        details: `Initiating request to generate flashcards from text:
-- Characters: ${textStats.characters}
-- Words: ${textStats.words}
-- Sentences: ${textStats.sentences}
-- Paragraphs: ${textStats.paragraphs}`,
+        details: `Initiating request to generate flashcards:
+- Text Stats:
+  - Characters: ${textStats.characters}
+  - Words: ${textStats.words}
+  - Sentences: ${textStats.sentences}
+  - Paragraphs: ${textStats.paragraphs}
+- API Configuration:
+  - URL: ${apiConfig.apiUrl}
+  - API Key: ${apiConfig.apiKeyValid ? "Valid" : "Invalid"}
+  - Key Format: ${apiConfig.apiKeyPrefix ? "Valid prefix" : "Invalid format"}`,
       });
 
       const requestBody = {
@@ -309,7 +395,10 @@ export default function GenerateFlashcardsForm() {
         details: `Error details:
 - Type: ${error instanceof Error ? error.constructor.name : "Unknown"}
 - Message: ${error instanceof Error ? error.message : "Unknown error occurred"}
-- Duration: ${requestDetails.executionDetails.duration}ms`,
+- Duration: ${requestDetails.executionDetails.duration}ms
+- API Config Status: ${apiConfig.isValid ? "Valid" : "Invalid"}
+- API URL: ${apiConfig.apiUrl || "Not configured"}
+- API Key Status: ${apiConfig.apiKeyValid ? "Valid" : "Invalid"}`,
       });
 
       console.error("Error generating flashcards:", error);
@@ -328,6 +417,12 @@ export default function GenerateFlashcardsForm() {
                       stack: error.stack,
                     }
                   : "Unknown error",
+              apiConfiguration: {
+                isValid: apiConfig.isValid,
+                apiUrl: apiConfig.apiUrl,
+                apiKeyValid: apiConfig.apiKeyValid,
+                apiKeyPrefix: apiConfig.apiKeyPrefix,
+              },
               executionDetails: requestDetails.executionDetails,
             },
             null,
