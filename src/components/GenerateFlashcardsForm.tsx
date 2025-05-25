@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Loader2, Check, X, Edit2 } from "lucide-react";
+import { Loader2, Check, X, Edit2, AlertCircle } from "lucide-react";
 import EditFlashcardDialog from "./EditFlashcardDialog";
 import type { UpdateFlashcardCommand } from "@/types";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
 // Define the GeneratedFlashcard type to fix type errors
 interface GeneratedFlashcard {
@@ -19,12 +20,31 @@ interface GeneratedFlashcard {
 interface GenerateFormState {
   text: string;
   isLoading: boolean;
-  error: string | null;
+  error: {
+    message: string;
+    details?: string;
+    code?: string;
+    technical?: string;
+  } | null;
   characterCount: number;
   success?: boolean;
   generatedFlashcards: GeneratedFlashcard[] | null;
   editingFlashcardId: string | null;
   editingFlashcard: { front: string; back: string } | null;
+}
+
+interface ErrorResponse {
+  message?: string;
+  details?: string;
+  code?: string;
+  stack?: string;
+}
+
+interface APIError {
+  message: string;
+  details?: string;
+  code?: string;
+  technical?: string;
 }
 
 const MIN_CHARS = 1000;
@@ -43,11 +63,12 @@ export default function GenerateFlashcardsForm() {
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const text = e.target.value;
+    const validationError = validateText(text);
     setState((prev) => ({
       ...prev,
       text,
       characterCount: text.length,
-      error: validateText(text),
+      error: validationError ? { message: validationError } : null,
       generatedFlashcards: null, // Reset generated cards when text changes
     }));
   };
@@ -62,16 +83,66 @@ export default function GenerateFlashcardsForm() {
     return null;
   };
 
+  const parseErrorResponse = async (response: Response): Promise<APIError> => {
+    try {
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const errorData = (await response.json()) as ErrorResponse;
+        return {
+          message: getErrorMessage(response.status, errorData),
+          details: errorData.details,
+          code: errorData.code || String(response.status),
+          technical: errorData.stack,
+        };
+      }
+      return {
+        message: getErrorMessage(response.status),
+        code: String(response.status),
+      };
+    } catch {
+      return {
+        message: getErrorMessage(response.status),
+        code: String(response.status),
+      };
+    }
+  };
+
+  const getErrorMessage = (status: number, errorData?: ErrorResponse): string => {
+    switch (status) {
+      case 401:
+        return "OpenAI API key is missing or invalid. Please check your environment configuration.";
+      case 429:
+        return "Rate limit exceeded. Please try again in a few moments.";
+      case 500:
+        if (errorData?.message?.includes("OpenAI")) {
+          return "There was an error communicating with OpenAI. Please try again.";
+        }
+        if (errorData?.message?.includes("API key")) {
+          return "OpenAI API key is not properly configured. Please contact support.";
+        }
+        return "An unexpected error occurred. Our team has been notified.";
+      default:
+        return errorData?.message || "An unexpected error occurred. Please try again.";
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const error = validateText(state.text);
-    if (error) {
-      setState((prev) => ({ ...prev, error }));
+    const validationError = validateText(state.text);
+    if (validationError) {
+      setState((prev) => ({
+        ...prev,
+        error: { message: validationError },
+      }));
       return;
     }
 
-    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+    setState((prev) => ({
+      ...prev,
+      isLoading: true,
+      error: null,
+    }));
 
     try {
       const response = await fetch("/api/ai/generate", {
@@ -81,14 +152,13 @@ export default function GenerateFlashcardsForm() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(errorData?.message || `HTTP error! status: ${response.status}`);
+        const error = await parseErrorResponse(response);
+        throw error;
       }
 
       const data = await response.json();
       console.log("Generated flashcards with IDs:", data.flashcards);
 
-      // Ensure each flashcard has a generation_id for later use
       if (data.flashcards?.length > 0 && !data.flashcards[0].generation_id) {
         console.error("Flashcards are missing generation_id");
       }
@@ -101,7 +171,7 @@ export default function GenerateFlashcardsForm() {
       console.error("Error generating flashcards:", error);
       setState((prev) => ({
         ...prev,
-        error: error instanceof Error ? error.message : "An unexpected error occurred",
+        error: (error as APIError) || { message: "An unexpected error occurred" },
       }));
     } finally {
       setState((prev) => ({ ...prev, isLoading: false }));
@@ -187,7 +257,7 @@ export default function GenerateFlashcardsForm() {
       console.error("Error accepting all flashcards:", err);
       setState((prev) => ({
         ...prev,
-        error: "Failed to accept flashcards. Please try again.",
+        error: { message: "Failed to accept flashcards. Please try again." },
       }));
     }
   };
@@ -263,7 +333,7 @@ export default function GenerateFlashcardsForm() {
       console.error("Error rejecting all flashcards:", err);
       setState((prev) => ({
         ...prev,
-        error: "Failed to reject flashcards. Please try again.",
+        error: { message: "Failed to reject flashcards. Please try again." },
       }));
     }
   };
@@ -354,7 +424,7 @@ export default function GenerateFlashcardsForm() {
       console.error("Error handling card action:", err);
       setState((prev) => ({
         ...prev,
-        error: "Failed to process action. Please try again.",
+        error: { message: "Failed to process action. Please try again." },
       }));
     }
   };
@@ -451,7 +521,7 @@ export default function GenerateFlashcardsForm() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="w-full max-w-4xl mx-auto">
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -479,9 +549,17 @@ export default function GenerateFlashcardsForm() {
         </div>
 
         {state.error && (
-          <div className="bg-airbnb-rausch-light border border-airbnb-rausch-border text-airbnb-rausch rounded-xl p-4">
-            <p>{state.error}</p>
-          </div>
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription className="mt-2">
+              <div className="font-medium">{state.error.message}</div>
+              {state.error.details && <div className="mt-2 text-sm opacity-90">{state.error.details}</div>}
+              {state.error.technical && (
+                <div className="mt-2 p-2 bg-destructive/10 rounded text-xs font-mono">{state.error.technical}</div>
+              )}
+            </AlertDescription>
+          </Alert>
         )}
 
         <button
@@ -508,71 +586,59 @@ export default function GenerateFlashcardsForm() {
       </form>
 
       {state.generatedFlashcards && state.generatedFlashcards.length > 0 && (
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="text-xl font-semibold text-airbnb-hof">Generated Flashcards</h3>
-            <div className="space-x-4">
+        <div className="mt-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold">Generated Flashcards</h2>
+            <div className="flex gap-2">
               <button
                 onClick={handleAcceptAll}
-                data-testid="accept-all-flashcards-button"
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
               >
                 Accept All
               </button>
               <button
                 onClick={handleRejectAll}
-                data-testid="reject-all-flashcards-button"
-                className="px-4 py-2 bg-airbnb-rausch text-white rounded-lg hover:bg-[#FF385C] transition-colors"
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
               >
                 Reject All
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="flashcards-grid">
-            {state.generatedFlashcards.map((card, index) => (
-              <div
-                key={index}
-                data-testid={`flashcard-${card.id}`}
-                className="bg-white rounded-xl shadow-md border p-6 space-y-4"
-              >
-                <div className="space-y-2">
-                  <h4 className="font-medium text-airbnb-hof">Front</h4>
-                  <p className="text-airbnb-foggy" data-testid={`flashcard-front-${card.id}`}>
-                    {card.front}
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-medium text-airbnb-hof">Back</h4>
-                  <p className="text-airbnb-foggy" data-testid={`flashcard-back-${card.id}`}>
-                    {card.back}
-                  </p>
-                </div>
-                <div className="flex justify-end space-x-2 pt-4">
-                  <button
-                    onClick={() => handleCardAction("accept", card)}
-                    data-testid={`accept-flashcard-${card.id}`}
-                    className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
-                    title="Accept"
-                  >
-                    <Check className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => handleCardAction("edit", card)}
-                    data-testid={`edit-flashcard-${card.id}`}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                    title="Edit"
-                  >
-                    <Edit2 className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => handleCardAction("reject", card)}
-                    data-testid={`reject-flashcard-${card.id}`}
-                    className="p-2 text-airbnb-rausch hover:bg-red-50 rounded-full transition-colors"
-                    title="Reject"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
+          <div className="space-y-4">
+            {state.generatedFlashcards.map((card) => (
+              <div key={card.id} className="border rounded-lg p-4 bg-white shadow-sm">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className="font-medium mb-2">{card.front}</h3>
+                    <p className="text-gray-600">{card.back}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleCardAction("accept", card)}
+                      data-testid={`accept-flashcard-${card.id}`}
+                      className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
+                      title="Accept"
+                    >
+                      <Check className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => handleCardAction("edit", card)}
+                      data-testid={`edit-flashcard-${card.id}`}
+                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                      title="Edit"
+                    >
+                      <Edit2 className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => handleCardAction("reject", card)}
+                      data-testid={`reject-flashcard-${card.id}`}
+                      className="p-2 text-airbnb-rausch hover:bg-red-50 rounded-full transition-colors"
+                      title="Reject"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
