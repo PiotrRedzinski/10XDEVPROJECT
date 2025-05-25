@@ -92,15 +92,58 @@ export class AIGenerationService {
         }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
+      // Check if we got HTML instead of JSON
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("text/html")) {
+        await this.logger.error("API URL returned HTML instead of JSON", {
+          apiUrl,
+          status: response.status,
+          contentType,
+        });
         return {
           isValid: false,
           apiUrl,
           apiKeyValid: false,
-          error: `API key validation failed: ${error.error?.message || "Unknown error"}`,
+          error: `Invalid API URL: Endpoint returned HTML instead of JSON. Please check if the API URL (${apiUrl}) is correct.`,
         };
       }
+
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (parseError) {
+        await this.logger.error("Failed to parse API response", {
+          apiUrl,
+          status: response.status,
+          contentType,
+          error: parseError instanceof Error ? parseError.message : "Unknown error",
+        });
+        return {
+          isValid: false,
+          apiUrl,
+          apiKeyValid: false,
+          error: `Failed to parse API response: ${parseError instanceof Error ? parseError.message : "Unknown error"}. Please check if the API URL (${apiUrl}) is correct.`,
+        };
+      }
+
+      if (!response.ok) {
+        await this.logger.error("API key validation failed", {
+          apiUrl,
+          status: response.status,
+          error: responseData.error,
+        });
+        return {
+          isValid: false,
+          apiUrl,
+          apiKeyValid: false,
+          error: `API key validation failed: ${responseData.error?.message || "Unknown error"}`,
+        };
+      }
+
+      await this.logger.info("API configuration validated successfully", {
+        apiUrl,
+        model: AI_CONFIG.OPENAI.MODEL,
+      });
 
       return {
         isValid: true,
@@ -108,6 +151,22 @@ export class AIGenerationService {
         apiKeyValid: true,
       };
     } catch (error) {
+      await this.logger.error("API validation failed", {
+        apiUrl,
+        error: error instanceof Error ? error.message : "Unknown error",
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+
+      // Check if it's a network error
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        return {
+          isValid: false,
+          apiUrl,
+          apiKeyValid: false,
+          error: `Failed to connect to API: ${error.message}. Please check your internet connection and if the API URL (${apiUrl}) is accessible.`,
+        };
+      }
+
       return {
         isValid: false,
         apiUrl,
