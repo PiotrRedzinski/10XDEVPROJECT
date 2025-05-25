@@ -24,8 +24,8 @@
     "pages:deploy": "astro build && wrangler pages deploy ./dist"
   },
   "dependencies": {
-    "@astrojs/cloudflare": "^7.0.0",
-    "@astrojs/node": "^6.0.0",
+    "@astrojs/cloudflare": "^12.5.3",
+    "@astrojs/node": "^9.2.2",
     "@astrojs/react": "^3.0.0",
     "@astrojs/sitemap": "^3.0.0",
     "@astrojs/tailwind": "^5.0.0",
@@ -39,7 +39,7 @@
     "@supabase/supabase-js": "^2.49.4",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
-    "astro": "^3.6.0",
+    "astro": "^5.8.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lightningcss": "1.24.1",
@@ -84,7 +84,7 @@
     "supabase": "^2.22.6",
     "typescript-eslint": "8.28.0",
     "vitest": "^3.1.2",
-    "wrangler": "^3.30.1"
+    "wrangler": "^4.16.1"
   },
   "lint-staged": {
     "*.{ts,tsx,astro}": [
