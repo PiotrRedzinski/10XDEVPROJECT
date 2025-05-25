@@ -23,11 +23,15 @@ export default defineConfig({
       },
     },
     // Force environment variables to be available
-    envPrefix: ["PUBLIC_"],
+    envPrefix: ["PUBLIC_", "OPENAI_"],
     // Explicitly define environment variables
     define: {
       "import.meta.env.PUBLIC_SUPABASE_URL": JSON.stringify(env.PUBLIC_SUPABASE_URL || ""),
       "import.meta.env.PUBLIC_SUPABASE_ANON_KEY": JSON.stringify(env.PUBLIC_SUPABASE_ANON_KEY || ""),
+      "import.meta.env.OPENAI_API_KEY": JSON.stringify(env.OPENAI_API_KEY || ""),
+      "import.meta.env.OPENAI_API_URL": JSON.stringify(
+        env.OPENAI_API_URL || "https://api.openai.com/v1/chat/completions"
+      ),
     },
   },
 });
