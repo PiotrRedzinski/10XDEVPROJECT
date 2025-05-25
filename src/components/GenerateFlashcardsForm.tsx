@@ -47,6 +47,17 @@ interface APIError {
   technical?: string;
 }
 
+interface RequestDetails {
+  timestamp: string;
+  endpoint: string;
+  method: string;
+  payload: {
+    text: string;
+    textLength: number;
+  };
+  headers: Record<string, string>;
+}
+
 const MIN_CHARS = 1000;
 const MAX_CHARS = 10000;
 
@@ -83,7 +94,83 @@ export default function GenerateFlashcardsForm() {
     return null;
   };
 
-  const parseErrorResponse = async (response: Response): Promise<APIError> => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const validationError = validateText(state.text);
+    if (validationError) {
+      setState((prev) => ({
+        ...prev,
+        error: { message: validationError },
+      }));
+      return;
+    }
+
+    setState((prev) => ({
+      ...prev,
+      isLoading: true,
+      error: null,
+    }));
+
+    // Capture request details for logging
+    const requestDetails: RequestDetails = {
+      timestamp: new Date().toISOString(),
+      endpoint: "/api/ai/generate",
+      method: "POST",
+      payload: {
+        text: `${state.text.slice(0, 100)}${state.text.length > 100 ? "..." : ""}`, // Truncate for logging
+        textLength: state.text.length,
+      },
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    try {
+      const response = await fetch("/api/ai/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: state.text }),
+      });
+
+      if (!response.ok) {
+        const error = await parseErrorResponse(response, requestDetails);
+        throw error;
+      }
+
+      const data = await response.json();
+      console.log("Generated flashcards with IDs:", data.flashcards);
+
+      if (data.flashcards?.length > 0 && !data.flashcards[0].generation_id) {
+        console.error("Flashcards are missing generation_id");
+      }
+
+      setState((prev) => ({
+        ...prev,
+        generatedFlashcards: data.flashcards,
+      }));
+    } catch (error) {
+      console.error("Error generating flashcards:", error);
+      setState((prev) => ({
+        ...prev,
+        error: (error as APIError) || {
+          message: "An unexpected error occurred",
+          technical: JSON.stringify(
+            {
+              request: requestDetails,
+              error: error instanceof Error ? error.message : "Unknown error",
+            },
+            null,
+            2
+          ),
+        },
+      }));
+    } finally {
+      setState((prev) => ({ ...prev, isLoading: false }));
+    }
+  };
+
+  const parseErrorResponse = async (response: Response, requestDetails: RequestDetails): Promise<APIError> => {
     try {
       const contentType = response.headers.get("content-type");
       let errorData: ErrorResponse | null = null;
@@ -94,13 +181,25 @@ export default function GenerateFlashcardsForm() {
         console.error("Failed to parse error response:", parseError);
         return {
           message: "Failed to parse server response",
-          technical: `Status: ${response.status} ${response.statusText}\nContent-Type: ${contentType}`,
+          technical: JSON.stringify(
+            {
+              request: requestDetails,
+              response: {
+                status: response.status,
+                statusText: response.statusText,
+                contentType,
+                headers: Object.fromEntries(response.headers.entries()),
+              },
+              parseError: parseError instanceof Error ? parseError.message : "Unknown parse error",
+            },
+            null,
+            2
+          ),
           code: String(response.status),
         };
       }
 
       if (contentType?.includes("application/json") && errorData) {
-        // Enhanced error details
         const baseMessage = getErrorMessage(response.status, errorData);
         return {
           message: baseMessage,
@@ -108,10 +207,14 @@ export default function GenerateFlashcardsForm() {
           code: errorData.code || String(response.status),
           technical: JSON.stringify(
             {
-              status: response.status,
-              error: errorData,
+              request: requestDetails,
+              response: {
+                status: response.status,
+                statusText: response.statusText,
+                headers: Object.fromEntries(response.headers.entries()),
+                error: errorData,
+              },
               timestamp: new Date().toISOString(),
-              endpoint: "/api/ai/generate",
             },
             null,
             2
@@ -122,7 +225,19 @@ export default function GenerateFlashcardsForm() {
       return {
         message: getErrorMessage(response.status),
         details: "Server returned an unexpected response format",
-        technical: `Status: ${response.status} ${response.statusText}\nContent-Type: ${contentType}`,
+        technical: JSON.stringify(
+          {
+            request: requestDetails,
+            response: {
+              status: response.status,
+              statusText: response.statusText,
+              contentType,
+              headers: Object.fromEntries(response.headers.entries()),
+            },
+          },
+          null,
+          2
+        ),
         code: String(response.status),
       };
     } catch (error) {
@@ -130,7 +245,24 @@ export default function GenerateFlashcardsForm() {
       return {
         message: "Failed to process server response",
         details: error instanceof Error ? error.message : "Unknown error occurred",
-        technical: `Status: ${response.status} ${response.statusText}`,
+        technical: JSON.stringify(
+          {
+            request: requestDetails,
+            error:
+              error instanceof Error
+                ? {
+                    message: error.message,
+                    stack: error.stack,
+                  }
+                : "Unknown error",
+            response: {
+              status: response.status,
+              statusText: response.statusText,
+            },
+          },
+          null,
+          2
+        ),
         code: String(response.status),
       };
     }
@@ -161,58 +293,6 @@ export default function GenerateFlashcardsForm() {
     })();
 
     return `${baseMessage} (Status: ${status})`;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    const validationError = validateText(state.text);
-    if (validationError) {
-      setState((prev) => ({
-        ...prev,
-        error: { message: validationError },
-      }));
-      return;
-    }
-
-    setState((prev) => ({
-      ...prev,
-      isLoading: true,
-      error: null,
-    }));
-
-    try {
-      const response = await fetch("/api/ai/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: state.text }),
-      });
-
-      if (!response.ok) {
-        const error = await parseErrorResponse(response);
-        throw error;
-      }
-
-      const data = await response.json();
-      console.log("Generated flashcards with IDs:", data.flashcards);
-
-      if (data.flashcards?.length > 0 && !data.flashcards[0].generation_id) {
-        console.error("Flashcards are missing generation_id");
-      }
-
-      setState((prev) => ({
-        ...prev,
-        generatedFlashcards: data.flashcards,
-      }));
-    } catch (error) {
-      console.error("Error generating flashcards:", error);
-      setState((prev) => ({
-        ...prev,
-        error: (error as APIError) || { message: "An unexpected error occurred" },
-      }));
-    } finally {
-      setState((prev) => ({ ...prev, isLoading: false }));
-    }
   };
 
   const handleAcceptAll = async () => {
