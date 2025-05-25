@@ -86,44 +86,81 @@ export default function GenerateFlashcardsForm() {
   const parseErrorResponse = async (response: Response): Promise<APIError> => {
     try {
       const contentType = response.headers.get("content-type");
-      if (contentType && contentType.includes("application/json")) {
-        const errorData = (await response.json()) as ErrorResponse;
+      let errorData: ErrorResponse | null = null;
+
+      try {
+        errorData = await response.json();
+      } catch (parseError) {
+        console.error("Failed to parse error response:", parseError);
         return {
-          message: getErrorMessage(response.status, errorData),
-          details: errorData.details,
-          code: errorData.code || String(response.status),
-          technical: errorData.stack,
+          message: "Failed to parse server response",
+          technical: `Status: ${response.status} ${response.statusText}\nContent-Type: ${contentType}`,
+          code: String(response.status),
         };
       }
+
+      if (contentType?.includes("application/json") && errorData) {
+        // Enhanced error details
+        const baseMessage = getErrorMessage(response.status, errorData);
+        return {
+          message: baseMessage,
+          details: errorData.details || errorData.message || "No additional details provided",
+          code: errorData.code || String(response.status),
+          technical: JSON.stringify(
+            {
+              status: response.status,
+              error: errorData,
+              timestamp: new Date().toISOString(),
+              endpoint: "/api/ai/generate",
+            },
+            null,
+            2
+          ),
+        };
+      }
+
       return {
         message: getErrorMessage(response.status),
+        details: "Server returned an unexpected response format",
+        technical: `Status: ${response.status} ${response.statusText}\nContent-Type: ${contentType}`,
         code: String(response.status),
       };
-    } catch {
+    } catch (error) {
+      console.error("Error parsing response:", error);
       return {
-        message: getErrorMessage(response.status),
+        message: "Failed to process server response",
+        details: error instanceof Error ? error.message : "Unknown error occurred",
+        technical: `Status: ${response.status} ${response.statusText}`,
         code: String(response.status),
       };
     }
   };
 
   const getErrorMessage = (status: number, errorData?: ErrorResponse): string => {
-    switch (status) {
-      case 401:
-        return "OpenAI API key is missing or invalid. Please check your environment configuration.";
-      case 429:
-        return "Rate limit exceeded. Please try again in a few moments.";
-      case 500:
-        if (errorData?.message?.includes("OpenAI")) {
-          return "There was an error communicating with OpenAI. Please try again.";
-        }
-        if (errorData?.message?.includes("API key")) {
-          return "OpenAI API key is not properly configured. Please contact support.";
-        }
-        return "An unexpected error occurred. Our team has been notified.";
-      default:
-        return errorData?.message || "An unexpected error occurred. Please try again.";
-    }
+    const baseMessage = (() => {
+      switch (status) {
+        case 401:
+          return "OpenAI API key is missing or invalid. Please check your environment configuration.";
+        case 429:
+          return "Rate limit exceeded. Please try again in a few moments.";
+        case 500:
+          if (errorData?.message?.includes("OpenAI")) {
+            return "There was an error communicating with OpenAI. Please try again.";
+          }
+          if (errorData?.message?.includes("API key")) {
+            return "OpenAI API key is not properly configured. Please contact support.";
+          }
+          return "An unexpected server error occurred.";
+        case 502:
+          return "The server encountered an error while communicating with OpenAI.";
+        case 504:
+          return "The request timed out. Please try again.";
+        default:
+          return errorData?.message || "An unexpected error occurred.";
+      }
+    })();
+
+    return `${baseMessage} (Status: ${status})`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -554,9 +591,23 @@ export default function GenerateFlashcardsForm() {
             <AlertTitle>Error</AlertTitle>
             <AlertDescription className="mt-2">
               <div className="font-medium">{state.error.message}</div>
-              {state.error.details && <div className="mt-2 text-sm opacity-90">{state.error.details}</div>}
+              {state.error.details && (
+                <div className="mt-2 text-sm opacity-90">
+                  <strong>Details:</strong> {state.error.details}
+                </div>
+              )}
+              {state.error.code && (
+                <div className="mt-2 text-sm opacity-90">
+                  <strong>Error Code:</strong> {state.error.code}
+                </div>
+              )}
               {state.error.technical && (
-                <div className="mt-2 p-2 bg-destructive/10 rounded text-xs font-mono">{state.error.technical}</div>
+                <div className="mt-2">
+                  <details className="text-xs">
+                    <summary className="cursor-pointer font-medium mb-2">Technical Details</summary>
+                    <pre className="bg-destructive/10 rounded p-2 overflow-x-auto">{state.error.technical}</pre>
+                  </details>
+                </div>
               )}
             </AlertDescription>
           </Alert>
