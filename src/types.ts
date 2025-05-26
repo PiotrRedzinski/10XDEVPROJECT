@@ -63,6 +63,7 @@ export interface CreateFlashcardCommand {
 export interface UpdateFlashcardCommand {
   front: string;
   back: string;
+  status?: string;
 }
 
 /**
@@ -121,15 +122,3 @@ export interface PaginationDTO {
  * Derived from the database generation_error_log table.
  */
 export type GenerationErrorLogDTO = Database["public"]["Tables"]["generation_error_log"]["Row"];
-
-export interface GeneratedFlashcard {
-  id: string;
-  front: string;
-  back: string;
-  source: "self" | "ai";
-  status: "pending" | "accepted-original" | "accepted-edited" | "rejected";
-  generation_id: string | null;
-  user_id: string;
-  created_at: string | null;
-  updated_at: string | null;
-}
