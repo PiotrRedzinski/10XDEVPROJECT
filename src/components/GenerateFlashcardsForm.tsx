@@ -140,18 +140,19 @@ export default function GenerateFlashcardsForm() {
     apiUrl: string | null;
     apiKeyValid: boolean;
     apiKeyPrefix: string | null;
-    error?: string;
+    error: string | null;
   }> => {
     try {
       const response = await fetch("/api/ai/verify-config");
       const data = await response.json();
 
+      // Consider the configuration valid if the API key is valid and there's no error
       return {
-        isValid: data.isValid,
+        isValid: data.apiKeyValid && !data.error,
         apiUrl: data.apiUrl,
         apiKeyValid: data.apiKeyValid,
         apiKeyPrefix: data.apiKeyPrefix,
-        error: data.error,
+        error: data.error || null,
       };
     } catch (error) {
       return {
@@ -222,7 +223,8 @@ export default function GenerateFlashcardsForm() {
 
     const apiConfig = await verifyApiConfiguration();
 
-    if (!apiConfig.isValid) {
+    // Only show error if there's an actual error or the API key is invalid
+    if (!apiConfig.apiKeyValid || apiConfig.error) {
       const errorMessage = apiConfig.error || "Invalid API configuration";
       requestDetails.executionDetails.stages.push({
         name: "config_verification",
