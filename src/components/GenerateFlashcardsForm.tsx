@@ -1003,40 +1003,38 @@ export default function GenerateFlashcardsForm() {
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {state.generatedFlashcards.map((card) => (
-              <div key={card.id} className="border rounded-lg p-4 bg-white shadow-sm">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <h3 className="font-medium mb-2">{card.front}</h3>
-                    <p className="text-gray-600">{card.back}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleCardAction("accept", card)}
-                      data-testid={`accept-flashcard-${card.id}`}
-                      className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
-                      title="Accept"
-                    >
-                      <Check className="h-5 w-5" />
-                    </button>
-                    <button
-                      onClick={() => handleCardAction("edit", card)}
-                      data-testid={`edit-flashcard-${card.id}`}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                      title="Edit"
-                    >
-                      <Edit2 className="h-5 w-5" />
-                    </button>
-                    <button
-                      onClick={() => handleCardAction("reject", card)}
-                      data-testid={`reject-flashcard-${card.id}`}
-                      className="p-2 text-airbnb-rausch hover:bg-red-50 rounded-full transition-colors"
-                      title="Reject"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
-                  </div>
+              <div key={card.id} className="border rounded-lg p-4 bg-white shadow-sm h-full flex flex-col">
+                <div className="flex-1">
+                  <h3 className="font-medium mb-2 line-clamp-2">{card.front}</h3>
+                  <p className="text-gray-600 line-clamp-3">{card.back}</p>
+                </div>
+                <div className="flex justify-end gap-2 mt-4 pt-2 border-t">
+                  <button
+                    onClick={() => handleCardAction("accept", card)}
+                    data-testid={`accept-flashcard-${card.id}`}
+                    className="p-2 text-green-600 hover:bg-green-50 rounded-full transition-colors"
+                    title="Accept"
+                  >
+                    <Check className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => handleCardAction("edit", card)}
+                    data-testid={`edit-flashcard-${card.id}`}
+                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                    title="Edit"
+                  >
+                    <Edit2 className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => handleCardAction("reject", card)}
+                    data-testid={`reject-flashcard-${card.id}`}
+                    className="p-2 text-airbnb-rausch hover:bg-red-50 rounded-full transition-colors"
+                    title="Reject"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
                 </div>
               </div>
             ))}
