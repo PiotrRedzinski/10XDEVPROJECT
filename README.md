@@ -1,5 +1,6 @@
-# Poprawiony workflow dla pull request - wszystko co trzeba już działa
+# wdrożone na produkcję na claudflare https://a25d0041.10xdevproject.pages.dev/generate - to zadanie dodatkowe zrealizowane
 
+# Poprawiony workflow dla pull request - wszystko co trzeba już działa
 # GenFish - AI-Powered Flashcard Generator - added permision to github token
 
 GenFish is a modern web application that leverages AI to automatically generate high-quality flashcards from text inputs. Built with a robust and cutting-edge tech stack, it streamlines the creation of study materials for students, educators, and lifelong learners.
